@@ -21,7 +21,10 @@ class AboutScreen extends StatelessWidget {
     return FutureBuilder<PackageInfo>(
       future: _packageInfoFuture,
       builder: (context, snapshot) {
-        final appVersion = snapshot.data?.version ?? '';
+        final packageInfo = snapshot.data;
+        final appVersion = packageInfo?.version ?? '';
+        final isCustomBuild =
+            packageInfo?.packageName == 'com.wastingaeons.plezy';
         return FocusedScrollScaffold(
           title: Text(t.about.title),
           slivers: [
@@ -41,6 +44,13 @@ class AboutScreen extends StatelessWidget {
                           t.about.versionLabel(version: appVersion),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
                         ),
+                        if (isCustomBuild) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Build ${packageInfo!.buildNumber} · wastingaeons',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         Text(
                           t.about.appDescription,
