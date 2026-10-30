@@ -491,7 +491,8 @@ class MediaCardState extends State<MediaCard>
             metadata: item,
             isOffline: widget.isOffline,
           );
-          if (refreshed == true && context.mounted) widget.onRefresh?.call(item);
+          if (refreshed == true && context.mounted)
+            widget.onRefresh?.call(item);
           return;
         }
       }

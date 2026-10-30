@@ -71,11 +71,26 @@ void main() {
 
   group('paired-device tap interception', () {
     test('View Details never sends a TV playback command', () {
-      expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.details), isFalse);
-      expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.local), isFalse);
-      expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.cancelled), isFalse);
-      expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.original), isFalse);
-      expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.connected), isTrue);
+      expect(
+        shouldSendCompanionPlayCommand(CompanionPlaybackTarget.details),
+        isFalse,
+      );
+      expect(
+        shouldSendCompanionPlayCommand(CompanionPlaybackTarget.local),
+        isFalse,
+      );
+      expect(
+        shouldSendCompanionPlayCommand(CompanionPlaybackTarget.cancelled),
+        isFalse,
+      );
+      expect(
+        shouldSendCompanionPlayCommand(CompanionPlaybackTarget.original),
+        isFalse,
+      );
+      expect(
+        shouldSendCompanionPlayCommand(CompanionPlaybackTarget.connected),
+        isTrue,
+      );
     });
 
     test('offers casting only on individual movies and episodes', () {
