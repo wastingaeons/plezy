@@ -2973,11 +2973,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               episode,
               isOffline: widget.isOffline,
             );
-            if (target != CompanionPlaybackTarget.local ||
-                !context.mounted ||
-                !_canUseDetail) {
+            if (!context.mounted || !_canUseDetail) return;
+            if (target == CompanionPlaybackTarget.details) {
+              await navigateToMediaItemDetails(
+                context,
+                episode,
+                isOffline: widget.isOffline,
+                onRefresh: (_) => unawaited(_refreshItemInPlace(episode)),
+              );
               return;
             }
+            if (target != CompanionPlaybackTarget.local) return;
             await navigateToVideoPlayerWithRefresh(
               context,
               metadata: episode,
