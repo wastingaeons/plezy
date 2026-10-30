@@ -229,8 +229,14 @@ bool shouldShowSkipMarkerButton({
   required bool hasPlayNextPrompt,
   required bool skipButtonDismissed,
   required bool controlsVisible,
+  bool tvPersistent = false,
 }) {
-  return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
+  // TV keeps a manually enabled marker prompt until the marker ends or the
+  // viewer deliberately dismisses it. Other platforms retain stock behavior.
+  return hasFirstFrame &&
+      hasMarker &&
+      !hasPlayNextPrompt &&
+      (tvPersistent ? !skipButtonDismissed : (!skipButtonDismissed || controlsVisible));
 }
 
 /// The viewer's raw "Video Player Navigation" preference, ignoring TV.
@@ -879,6 +885,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   final ValueNotifier<bool> _autoSkipActive = ValueNotifier<bool>(false);
   // Skip button dismiss state
   bool _skipButtonDismissed = false;
+  bool _skipButtonCompact = false;
   Timer? _skipButtonDismissTimer;
   // Performance overlay
   bool get _showPerformanceOverlay => _settings.read(SettingsService.showPerformanceOverlay);
@@ -1457,7 +1464,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         ),
                       ),
                     ),
-                  // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
+                  // TV skip prompt compacts at 12s and remains available through the marker.
                   if (_isSkipMarkerButtonVisible)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
