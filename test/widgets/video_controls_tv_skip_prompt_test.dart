@@ -63,30 +63,33 @@ void main() {
     );
   });
 
-  test('mobile keeps full-sized skip prompt available while controls are hidden', () {
-    expect(
-      shouldShowSkipMarkerButton(
-        hasFirstFrame: true,
-        hasMarker: true,
-        hasPlayNextPrompt: false,
-        skipButtonDismissed: false,
-        controlsVisible: false,
-        persistUntilMarkerEnds: true,
-      ),
-      isTrue,
-    );
-    expect(
-      shouldShowSkipMarkerButton(
-        hasFirstFrame: true,
-        hasMarker: true,
-        hasPlayNextPrompt: false,
-        skipButtonDismissed: true,
-        controlsVisible: true,
-        persistUntilMarkerEnds: true,
-      ),
-      isFalse,
-    );
-  });
+  test(
+    'mobile keeps full-sized skip prompt available while controls are hidden',
+    () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: false,
+          controlsVisible: false,
+          persistUntilMarkerEnds: true,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: true,
+          controlsVisible: true,
+          persistUntilMarkerEnds: true,
+        ),
+        isFalse,
+      );
+    },
+  );
 
   test('desktop retains original seven-second dismissal behavior', () {
     expect(

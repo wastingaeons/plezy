@@ -244,7 +244,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     hasPlayNextPrompt: widget.playNextFocusNode != null,
     skipButtonDismissed: _skipButtonDismissed,
     controlsVisible: _showControls,
-    persistUntilMarkerEnds: PlatformDetector.isTV() || PlatformDetector.isMobile(context),
+    persistUntilMarkerEnds:
+        PlatformDetector.isTV() || PlatformDetector.isMobile(context),
   );
 
   void _activateSkipMarker() {
