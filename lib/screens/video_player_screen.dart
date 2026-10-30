@@ -1485,6 +1485,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
 
     _companionRemote.bind();
+    _companionRemote.setNowPlaying(_currentMetadata.displayTitle, subtitle: _currentMetadata.displaySubtitle);
     _setupAppleTvRemotePlaybackActions();
 
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
