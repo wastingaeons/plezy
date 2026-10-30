@@ -2,6 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 
 void main() {
+  test('mobile auto-hiding player controls does not dismiss the skip prompt', () {
+    expect(shouldDismissSkipMarkerOnChromeHide(isTv: false, isMobile: true), isFalse);
+    expect(shouldDismissSkipMarkerOnChromeHide(isTv: true, isMobile: false), isFalse);
+    expect(shouldDismissSkipMarkerOnChromeHide(isTv: false, isMobile: false), isTrue);
+  });
+
   test('TV marker prompt stays visible after player controls hide', () {
     expect(
       shouldShowSkipMarkerButton(
