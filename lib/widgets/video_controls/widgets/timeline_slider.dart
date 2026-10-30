@@ -400,6 +400,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                     painter: BufferRangePainter(
                       ranges: widget.bufferRanges,
                       duration: widget.duration,
+                      focused: showFocus,
                       chapters:
                           widget.chaptersLoaded &&
                               widget.showChapterMarkersOnTimeline
@@ -459,7 +460,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       min: 0.0,
                       max: max,
                       onChanged: _noopSliderChanged,
-                      activeColor: Colors.white,
+                      activeColor: showFocus ? const Color(0xFFFF7E57) : Colors.white,
                       inactiveColor: Colors.transparent,
                     ),
                   ),
@@ -502,8 +503,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
         borderRadius: 8,
         autoScroll: false,
         disableScale: true,
-        // The default Plezy accent outline makes D-pad focus visible on the
-        // timeline instead of relying on the tiny focused scrubber knob.
+        // The orange progress, buffered track and focus knob replace the
+        // previous full-width white focus rectangle.
+        delegateFocusBorder: true,
         descendantsAreFocusable: false,
         child: slider,
       );
@@ -618,5 +620,5 @@ class _FocusKnobThumbShape extends SliderComponentShape {
     required double value,
     required double textScaleFactor,
     required Size sizeWithOverflow,
-  }) => paintPlayerFocusKnob(context.canvas, center);
+  }) => paintPlayerFocusKnob(context.canvas, center, fillColor: const Color(0xFFFF7E57));
 }
