@@ -28,7 +28,7 @@ class BufferRangePainter extends CustomPainter {
 
     final bgPaint = Paint()
       ..color = focused
-          ? const Color(0xFF873116)
+          ? const Color(0xFF0C4A6E)
           : Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
@@ -70,7 +70,7 @@ class BufferRangePainter extends CustomPainter {
 
     final bufPaint = Paint()
       ..color = focused
-          ? const Color(0xFFBE5632)
+          ? const Color(0xFF0284C7)
           : Colors.white.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
