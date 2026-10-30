@@ -256,14 +256,14 @@ bool shouldShowSkipMarkerButton({
   required bool hasPlayNextPrompt,
   required bool skipButtonDismissed,
   required bool controlsVisible,
-  bool tvPersistent = false,
+  bool persistUntilMarkerEnds = false,
 }) {
-  // TV keeps a manually enabled marker prompt until the marker ends or the
-  // viewer deliberately dismisses it. Other platforms retain stock behavior.
+  // TV and mobile keep manual skip controls until the marker ends or the
+  // viewer deliberately dismisses them. Desktop retains stock behavior.
   return hasFirstFrame &&
       hasMarker &&
       !hasPlayNextPrompt &&
-      (tvPersistent
+      (persistUntilMarkerEnds
           ? !skipButtonDismissed
           : (!skipButtonDismissed || controlsVisible));
 }
