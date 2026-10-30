@@ -290,8 +290,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     if (visibilityChanged && !controlsVisible) {
       _desktopControlsKey.currentState?.hideContentStrip();
       final isTv = PlatformDetector.isTV();
-      // On TV the timer only compacts the prompt. Do not cancel it when the
-      // OSD hides; otherwise a new marker could never reach its compact state.
+      final isMobile = PlatformDetector.isMobile(context);
+      // TV keeps its 12s compact timer through chrome hides. Mobile has no
+      // dismissal timer and must not be marked dismissed when chrome hides.
       if (!isTv) _cancelSkipButtonDismissTimer();
       // Preserve one-click Select on a focused skip prompt while the normal
       // player controls fade away. If focus moved to a different control,
@@ -308,7 +309,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       _setControlsState(() {
         _controlsOpaque = false;
         if (controlsDismissed) _controlsMounted = false;
-        if (!isTv && _currentMarker != null) _skipButtonDismissed = true;
+        if (_currentMarker != null &&
+            shouldDismissSkipMarkerOnChromeHide(isTv: isTv, isMobile: isMobile)) {
+          _skipButtonDismissed = true;
+        }
       });
       if (!keepSkipFocus) _claimPlayerSurfaceFocus();
     } else if (visibilityChanged) {
