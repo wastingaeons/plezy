@@ -15,6 +15,9 @@ class SkipMarkerButton extends StatelessWidget {
   final bool hasNextEpisode;
   final bool isAutoSkipActive;
   final bool shouldShowAutoSkip;
+
+  /// TV-only unobtrusive presentation after the initial 12-second window.
+  final bool compact;
   final int autoSkipDelay;
   final double autoSkipProgress;
   final FocusNode focusNode;
@@ -28,6 +31,7 @@ class SkipMarkerButton extends StatelessWidget {
     required this.hasNextEpisode,
     required this.isAutoSkipActive,
     required this.shouldShowAutoSkip,
+    this.compact = false,
     required this.autoSkipDelay,
     required this.autoSkipProgress,
     required this.focusNode,
@@ -39,7 +43,9 @@ class SkipMarkerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCredits = marker.isCredits;
     final creditsAtEnd =
-        isCredits && playerDuration > Duration.zero && (playerDuration - marker.endTime).inMilliseconds <= 1000;
+        isCredits &&
+        playerDuration > Duration.zero &&
+        (playerDuration - marker.endTime).inMilliseconds <= 1000;
     final showNextEpisode = creditsAtEnd && hasNextEpisode;
     String baseButtonText;
     if (showNextEpisode) {
@@ -51,25 +57,30 @@ class SkipMarkerButton extends StatelessWidget {
     }
 
     final remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
-        ? (autoSkipDelay - (autoSkipProgress * autoSkipDelay)).ceil().clamp(0, autoSkipDelay)
+        ? (autoSkipDelay - (autoSkipProgress * autoSkipDelay)).ceil().clamp(
+            0,
+            autoSkipDelay,
+          )
         : 0;
 
     final showAutoSkipCountdown = isAutoSkipActive && shouldShowAutoSkip;
     final buttonText = showAutoSkipCountdown && remainingSeconds > 0
         ? '$baseButtonText ($remainingSeconds)'
         : baseButtonText;
-    final buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
+    final buttonIcon = showNextEpisode
+        ? Symbols.skip_next_rounded
+        : Symbols.fast_forward_rounded;
 
     return FocusableWrapper(
       focusNode: focusNode,
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
-      // The translucent focus overlay was almost invisible over white.
-      // Our accent ring is painted above the content instead.
+      // Explicit accent outline is painted on top of the skip countdown.
       focusColor: Colors.transparent,
       autoScroll: false,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.arrowDown) {
           onFocusDown();
           return KeyEventResult.handled;
         }
@@ -82,13 +93,22 @@ class SkipMarkerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 10 : 16,
+                  vertical: compact ? 7 : 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Row(
@@ -96,50 +116,73 @@ class SkipMarkerButton extends StatelessWidget {
                   children: [
                     Text(
                       buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: .w600),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: compact ? 13 : 16,
+                        fontWeight: .w600,
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                    SizedBox(width: compact ? 5 : 8),
+                    AppIcon(
+                      buttonIcon,
+                      fill: 1,
+                      color: Colors.black,
+                      size: compact ? 16 : 20,
+                    ),
                   ],
                 ),
               ),
               if (isAutoSkipActive && shouldShowAutoSkip)
                 Positioned.fill(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                    borderRadius: BorderRadius.circular(
+                      tokens(context).radiusSm,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
                           flex: (autoSkipProgress * 100).round(),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                              color: Theme.of(context).colorScheme.primary
+                                  .withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(
+                                tokens(context).radiusSm,
+                              ),
                             ),
                           ),
                         ),
                         Expanded(
                           flex: ((1.0 - autoSkipProgress) * 100).round(),
-                          child: Container(decoration: const BoxDecoration(color: Colors.transparent)),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              // Keep the accent focus outline on top of the auto-skip countdown
-              // so D-pad focus is obvious from across the room.
+              // Accented focus ring is visible even over auto-skip progress.
+              // D-pad focus remains visually clear after the button compacts.
               Positioned.fill(
                 child: IgnorePointer(
                   child: AnimatedBuilder(
                     animation: focusNode,
                     builder: (context, _) {
-                      final showFocus = focusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+                      final showFocus = focusNode.hasFocus &&
+                          InputModeTracker.isKeyboardMode(context);
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                          borderRadius: BorderRadius.circular(
+                            tokens(context).radiusSm,
+                          ),
                           border: Border.all(
-                            color: showFocus ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                            color: showFocus
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent,
                             width: 3,
                           ),
                         ),

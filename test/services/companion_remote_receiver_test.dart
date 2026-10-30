@@ -9,7 +9,9 @@ import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 
 void main() {
-  testWidgets('Back command dispatches semantic gamepad B events', (tester) async {
+  testWidgets('Back command dispatches semantic gamepad B events', (
+    tester,
+  ) async {
     final focusNode = FocusNode();
     addTearDown(focusNode.dispose);
     final events = <KeyEvent>[];
@@ -33,7 +35,10 @@ void main() {
           focusNode: focusNode,
           onKeyEvent: (_, event) {
             events.add(event);
-            final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: false);
+            final navigationKey = classifyPlayerNavigationKey(
+              event,
+              isAppleTV: false,
+            );
             return handlePlayerNavigationKeyAction(event, navigationKey, () {
               actions++;
               coordinator.handle(navigationKey);
@@ -46,17 +51,44 @@ void main() {
     focusNode.requestFocus();
     await tester.pump();
 
-    CompanionRemoteReceiver.instance.handleCommand(const RemoteCommand(type: RemoteCommandType.back), null);
+    CompanionRemoteReceiver.instance.handleCommand(
+      const RemoteCommand(type: RemoteCommandType.back),
+      null,
+    );
     await tester.pump();
 
     expect(events, hasLength(2));
     expect(events.first, isA<KeyDownEvent>());
     expect(events.last, isA<KeyUpEvent>());
-    expect(events.map((event) => event.logicalKey), everyElement(LogicalKeyboardKey.gameButtonB));
-    expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
+    expect(
+      events.map((event) => event.logicalKey),
+      everyElement(LogicalKeyboardKey.gameButtonB),
+    );
+    expect(
+      events.map((event) => event.deviceType),
+      everyElement(ui.KeyEventDeviceType.directionalPad),
+    );
     expect(actions, 1);
     expect(chromeController.controlsVisible, isFalse);
     expect(exits, 0);
+  });
+
+  testWidgets('playMedia forwards the requested item to the host handler', (
+    tester,
+  ) async {
+    final receiver = CompanionRemoteReceiver.instance;
+    Map<String, dynamic>? received;
+    receiver.onPlayMedia = (data) => received = data;
+    addTearDown(() => receiver.onPlayMedia = null);
+
+    receiver.handleCommand(
+      const RemoteCommand(
+        type: RemoteCommandType.playMedia,
+        data: {'serverId': 'srv1', 'ratingKey': '42'},
+      ),
+      null,
+    );
+    expect(received, {'serverId': 'srv1', 'ratingKey': '42'});
   });
 
   group('music transport', () {
@@ -90,7 +122,10 @@ void main() {
       ]) {
         receiver.handleCommand(RemoteCommand(type: type), null);
       }
-      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.volumeUp), null);
+      receiver.handleCommand(
+        const RemoteCommand(type: RemoteCommandType.volumeUp),
+        null,
+      );
 
       expect(routed, const [
         RemoteCommandType.playPause,
@@ -109,7 +144,10 @@ void main() {
       receiver.playerOwner = Object();
       receiver.onSeekForward = () => seeks++;
 
-      receiver.handleCommand(const RemoteCommand(type: RemoteCommandType.seekForward), null);
+      receiver.handleCommand(
+        const RemoteCommand(type: RemoteCommandType.seekForward),
+        null,
+      );
 
       expect(routed, isEmpty);
       expect(seeks, 1);
