@@ -92,7 +92,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     }
 
     // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode)
-    if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false)) {
+    if (PlatformDetector.isTV() &&
+        InputModeTracker.isKeyboardMode(context, listen: false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         // An open sheet (tracks, settings, subtitle search) or a route above
@@ -112,7 +113,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     final marker = _currentMarker!;
     final endTime = marker.endTime;
     final duration = widget.player.state.duration;
-    final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
+    final isAtEnd =
+        duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
 
     final handsOffToCompletion = marker.isCredits && isAtEnd;
     if (handsOffToCompletion) {
@@ -198,17 +200,20 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _skipButtonDismissTimer?.cancel();
     if (!_hasRenderedFirstFrame) return;
     final compactOnTv = PlatformDetector.isTV();
-    _skipButtonDismissTimer = Timer(Duration(seconds: compactOnTv ? 12 : 7), () {
-      if (!mounted || _currentMarker == null || _skipButtonDismissed) return;
-      if (compactOnTv) {
-        _setControlsState(() => _skipButtonCompact = true);
-        return;
-      }
-      _setControlsState(() => _skipButtonDismissed = true);
-      // Elsewhere, a timed-out prompt returns control to the video surface.
-      if (!_showControls) _releaseSkipMarkerFocusToSurface();
-      _cancelAutoSkipTimer();
-    });
+    _skipButtonDismissTimer = Timer(
+      Duration(seconds: compactOnTv ? 12 : 7),
+      () {
+        if (!mounted || _currentMarker == null || _skipButtonDismissed) return;
+        if (compactOnTv) {
+          _setControlsState(() => _skipButtonCompact = true);
+          return;
+        }
+        _setControlsState(() => _skipButtonDismissed = true);
+        // Elsewhere, a timed-out prompt returns control to the video surface.
+        if (!_showControls) _releaseSkipMarkerFocusToSurface();
+        _cancelAutoSkipTimer();
+      },
+    );
   }
 
   void _cancelSkipButtonDismissTimer() {
@@ -223,7 +228,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
 
-  bool _shouldAutoSkipForMarker(MediaMarker marker) => _skipModeFor(marker) == SkipMarkerMode.auto;
+  bool _shouldAutoSkipForMarker(MediaMarker marker) =>
+      _skipModeFor(marker) == SkipMarkerMode.auto;
 
   bool _shouldShowAutoSkip() {
     if (_currentMarker == null) return false;
