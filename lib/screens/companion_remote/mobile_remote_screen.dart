@@ -57,7 +57,9 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
   }
 
   void _onRemoteSessionChanged() {
-    if (_returnScheduled || _returnedAfterPairing || !mounted ||
+    if (_returnScheduled ||
+        _returnedAfterPairing ||
+        !mounted ||
         !shouldReturnToBrowsingAfterRemoteConnect(
           initialStatus: _initialRemoteStatus,
           isRemote: _remoteProvider.isRemote,
@@ -118,7 +120,9 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                       );
 
                       if (confirmed && context.mounted) {
-                        await context.read<CompanionRemoteProvider>().leaveSession();
+                        await context
+                            .read<CompanionRemoteProvider>()
+                            .leaveSession();
                       }
                     },
                     tooltip: t.common.disconnect,
@@ -138,11 +142,17 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                   children: [
                     const CircularProgressIndicator(),
                     const SizedBox(height: 24),
-                    Text(t.companionRemote.remote.reconnecting, style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      t.companionRemote.remote.reconnecting,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 8),
                     Text(
-                      t.companionRemote.remote.attemptOf(current: provider.reconnectAttempts),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
+                      t.companionRemote.remote.attemptOf(
+                        current: provider.reconnectAttempts,
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: tokens(context).textMuted),
                     ),
                     const SizedBox(height: 32),
                     Row(
@@ -187,7 +197,10 @@ class _RemoteControlLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     if (PlatformDetector.isDesktop(context)) {
       return Center(
-        child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 400), child: const _RemoteControlContent()),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: const _RemoteControlContent(),
+        ),
       );
     }
 
@@ -210,9 +223,10 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
       _sendCommand(RemoteCommandType.tabSearch);
     }
     final provider = context.read<CompanionRemoteProvider>();
-    OverlaySheetController.of(
-      context,
-    ).show(showDragHandle: true, builder: (_) => _SearchBottomSheet(provider: provider));
+    OverlaySheetController.of(context).show(
+      showDragHandle: true,
+      builder: (_) => _SearchBottomSheet(provider: provider),
+    );
   }
 
   void _sendCommand(RemoteCommandType type) {
@@ -236,7 +250,10 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
               color: Theme.of(context).colorScheme.primaryContainer,
               child: Row(
                 children: [
-                  AppIcon(Symbols.computer_rounded, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                  AppIcon(
+                    Symbols.computer_rounded,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -244,15 +261,21 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                       children: [
                         Text(
                           device.name,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
                         ),
                         Text(
                           device.platform,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
                         ),
                       ],
                     ),
@@ -260,7 +283,10 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ],
               ),
@@ -269,7 +295,12 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         ),
         Expanded(
           child: ListView(
-            padding: .fromLTRB(16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
+            padding: .fromLTRB(
+              16,
+              16,
+              16,
+              16 + MediaQuery.paddingOf(context).bottom,
+            ),
             children: [
               SegmentedButton<int>(
                 showSelectedIcon: false,
@@ -309,7 +340,9 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
   }
 
   Widget _buildNavigationTab() {
-    final isPlayerActive = context.watch<CompanionRemoteProvider>().isPlayerActive;
+    final isPlayerActive = context
+        .watch<CompanionRemoteProvider>()
+        .isPlayerActive;
 
     return Column(
       children: [
@@ -338,7 +371,10 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         Center(child: _DPad(onCommand: _sendCommand)),
         if (!isPlayerActive) ...[
           const SizedBox(height: 32),
-          Text(t.companionRemote.remote.tabNavigation, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            t.companionRemote.remote.tabNavigation,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -429,7 +465,10 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           ],
         ),
         const SizedBox(height: 32),
-        Text(t.companionRemote.remote.volume, style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          t.companionRemote.remote.volume,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: .center,
@@ -458,7 +497,9 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
   }
 
   Widget _buildQuickActionsTab() {
-    final isPlayerActive = context.watch<CompanionRemoteProvider>().isPlayerActive;
+    final isPlayerActive = context
+        .watch<CompanionRemoteProvider>()
+        .isPlayerActive;
 
     return Column(
       children: [
@@ -469,7 +510,11 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
           alignment: WrapAlignment.center,
           children: [
             if (!isPlayerActive)
-              _RemoteCard(icon: Symbols.search_rounded, label: t.common.search, onPressed: _showSearchSheet),
+              _RemoteCard(
+                icon: Symbols.search_rounded,
+                label: t.common.search,
+                onPressed: _showSearchSheet,
+              ),
             if (isPlayerActive) ...[
               _RemoteCard(
                 icon: Symbols.fullscreen_rounded,
@@ -514,7 +559,10 @@ class _DPad extends StatelessWidget {
         child: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(shape: BoxShape.circle, color: colors.surface),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colors.surface,
+              ),
             ),
             _DPadZone(
               startAngle: -135,
@@ -536,7 +584,11 @@ class _DPad extends StatelessWidget {
               icon: Symbols.keyboard_arrow_left_rounded,
               onTap: () => onCommand(RemoteCommandType.dpadLeft),
             ),
-            Center(child: _DPadCenter(onTap: () => onCommand(RemoteCommandType.select))),
+            Center(
+              child: _DPadCenter(
+                onTap: () => onCommand(RemoteCommandType.select),
+              ),
+            ),
           ],
         ),
       ),
@@ -549,7 +601,11 @@ class _DPadZone extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const _DPadZone({required this.startAngle, required this.icon, required this.onTap});
+  const _DPadZone({
+    required this.startAngle,
+    required this.icon,
+    required this.onTap,
+  });
 
   Alignment get iconAlignment {
     final midRad = (startAngle + 45) * pi / 180;
@@ -586,7 +642,9 @@ class _DPadZoneState extends State<_DPadZone> {
           },
           child: AnimatedContainer(
             duration: tokens(context).fast,
-            color: _pressed ? colors.primary.withValues(alpha: 0.8) : colors.primary,
+            color: _pressed
+                ? colors.primary.withValues(alpha: 0.8)
+                : colors.primary,
             alignment: widget.iconAlignment,
             child: AppIcon(widget.icon, size: 28, color: colors.onPrimary),
           ),
@@ -627,7 +685,9 @@ class _DPadCenterState extends State<_DPadCenter> {
         height: _DPad._centerSize,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: _pressed ? colors.primary.withValues(alpha: 0.8) : colors.primary,
+          color: _pressed
+              ? colors.primary.withValues(alpha: 0.8)
+              : colors.primary,
         ),
         child: const SizedBox.shrink(),
       ),
@@ -640,7 +700,11 @@ class _SectorClipper extends CustomClipper<Path> {
   final double innerRadius;
   final double gapWidth;
 
-  const _SectorClipper({required this.startAngle, required this.innerRadius, required this.gapWidth});
+  const _SectorClipper({
+    required this.startAngle,
+    required this.innerRadius,
+    required this.gapWidth,
+  });
 
   @override
   Path getClip(Size size) {
@@ -660,17 +724,38 @@ class _SectorClipper extends CustomClipper<Path> {
     final innerEnd = endRad - innerOffset;
 
     return Path()
-      ..moveTo(center.dx + innerRadius * cos(innerStart), center.dy + innerRadius * sin(innerStart))
-      ..lineTo(center.dx + outerRadius * cos(outerStart), center.dy + outerRadius * sin(outerStart))
-      ..arcTo(Rect.fromCircle(center: center, radius: outerRadius), outerStart, outerEnd - outerStart, false)
-      ..lineTo(center.dx + innerRadius * cos(innerEnd), center.dy + innerRadius * sin(innerEnd))
-      ..arcTo(Rect.fromCircle(center: center, radius: innerRadius), innerEnd, innerStart - innerEnd, false)
+      ..moveTo(
+        center.dx + innerRadius * cos(innerStart),
+        center.dy + innerRadius * sin(innerStart),
+      )
+      ..lineTo(
+        center.dx + outerRadius * cos(outerStart),
+        center.dy + outerRadius * sin(outerStart),
+      )
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: outerRadius),
+        outerStart,
+        outerEnd - outerStart,
+        false,
+      )
+      ..lineTo(
+        center.dx + innerRadius * cos(innerEnd),
+        center.dy + innerRadius * sin(innerEnd),
+      )
+      ..arcTo(
+        Rect.fromCircle(center: center, radius: innerRadius),
+        innerEnd,
+        innerStart - innerEnd,
+        false,
+      )
       ..close();
   }
 
   @override
   bool shouldReclip(covariant _SectorClipper oldClipper) =>
-      startAngle != oldClipper.startAngle || innerRadius != oldClipper.innerRadius || gapWidth != oldClipper.gapWidth;
+      startAngle != oldClipper.startAngle ||
+      innerRadius != oldClipper.innerRadius ||
+      gapWidth != oldClipper.gapWidth;
 }
 
 class _RemoteButton extends StatelessWidget {
@@ -701,12 +786,19 @@ class _RemoteButton extends StatelessWidget {
               HapticFeedback.lightImpact();
               onPressed();
             },
-            style: FilledButton.styleFrom(padding: .zero, shape: const CircleBorder()),
+            style: FilledButton.styleFrom(
+              padding: .zero,
+              shape: const CircleBorder(),
+            ),
             child: AppIcon(icon, size: iconSize),
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -717,7 +809,11 @@ class _RemoteChip extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
-  const _RemoteChip({required this.icon, required this.label, required this.onPressed});
+  const _RemoteChip({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -741,13 +837,17 @@ class _SearchBottomSheet extends StatefulWidget {
   State<_SearchBottomSheet> createState() => _SearchBottomSheetState();
 }
 
-class _SearchBottomSheetState extends State<_SearchBottomSheet> with ControllerDisposerMixin {
+class _SearchBottomSheetState extends State<_SearchBottomSheet>
+    with ControllerDisposerMixin {
   late final _controller = createTextEditingController();
 
   void _submit(String text) {
     final trimmed = text.trim();
     if (trimmed.isNotEmpty) {
-      widget.provider.sendCommand(RemoteCommandType.search, data: {'query': trimmed});
+      widget.provider.sendCommand(
+        RemoteCommandType.search,
+        data: {'query': trimmed},
+      );
     }
     OverlaySheetController.of(context).close();
   }
@@ -755,7 +855,12 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> with ControllerD
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: .only(bottom: MediaQuery.viewInsetsOf(context).bottom, left: 16, right: 16, top: 16),
+      padding: .only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
       child: Column(
         mainAxisSize: .min,
         children: [
@@ -785,7 +890,11 @@ class _RemoteCard extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
 
-  const _RemoteCard({required this.icon, required this.label, required this.onPressed});
+  const _RemoteCard({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -804,7 +913,11 @@ class _RemoteCard extends StatelessWidget {
             children: [
               AppIcon(icon, size: 32),
               const SizedBox(height: 8),
-              Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
