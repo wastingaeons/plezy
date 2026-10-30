@@ -472,7 +472,8 @@ class MediaCardState extends State<MediaCard>
         if (target == CompanionPlaybackTarget.cancelled || !context.mounted) {
           return;
         }
-        if (target == CompanionPlaybackTarget.connected) {
+        if (target == CompanionPlaybackTarget.connected ||
+            target == CompanionPlaybackTarget.details) {
           await navigateToMediaItemDetails(
             context,
             item,
