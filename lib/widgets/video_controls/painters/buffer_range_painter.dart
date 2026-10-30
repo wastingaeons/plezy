@@ -10,8 +10,9 @@ class BufferRangePainter extends CustomPainter {
   final List<BufferRange> ranges;
   final Duration duration;
   final List<MediaChapter> chapters;
+  final bool focused;
 
-  BufferRangePainter({required this.ranges, required this.duration, this.chapters = const []});
+  BufferRangePainter({required this.ranges, required this.duration, this.chapters = const [], this.focused = false});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -21,7 +22,7 @@ class BufferRangePainter extends CustomPainter {
     final y = (size.height - trackHeight) / 2;
 
     final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
+      ..color = focused ? const Color(0xFF873116) : Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
     final durationMs = duration.inMilliseconds.toDouble();
@@ -56,7 +57,7 @@ class BufferRangePainter extends CustomPainter {
     if (durationMs <= 0) return;
 
     final bufPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
+      ..color = focused ? const Color(0xFFBE5632) : Colors.white.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
     for (final range in ranges) {
@@ -82,7 +83,8 @@ class BufferRangePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(BufferRangePainter oldDelegate) {
-    return oldDelegate.duration != duration ||
+    return oldDelegate.focused != focused ||
+        oldDelegate.duration != duration ||
         !listEquals(oldDelegate.ranges, ranges) ||
         !_chapterSplitsEqual(oldDelegate.chapters, chapters);
   }
