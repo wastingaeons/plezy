@@ -1,5 +1,5 @@
-# Preliminary debug builds for Chromecast (32-bit) and Pixel (64-bit).
-# They are signed with temporary debug keys and are not Obtainium releases.
+# Debug APKs plus a temporary AOT release-mode Chromecast build for cold-start comparisons.
+# All are ephemeral test builds, NOT signed Obtainium releases.
 name: Custom Android Integration Smoke Build
 
 on:
@@ -26,9 +26,15 @@ jobs:
           - label: Chromecast ARMv7
             platform: android-arm
             suffix: armv7
+            mode: debug
           - label: Pixel ARM64
             platform: android-arm64
             suffix: arm64
+            mode: debug
+          - label: Chromecast ARMv7 optimized AOT
+            platform: android-arm
+            suffix: armv7-optimized-test
+            mode: release
     env:
       PLEZY_CUSTOM_APPLICATION_ID: com.wastingaeons.plezy
     steps:
@@ -49,16 +55,32 @@ jobs:
           cache: true
       - name: Download locked dependencies
         run: flutter pub get --enforce-lockfile --no-example
-      - name: Compile Android debug APK
+      - name: Create disposable release-test signing key (not for production)
+        if: matrix.mode == 'release'
+        shell: bash
         run: |
-          flutter build apk --debug --target-platform "${{ matrix.platform }}" \
+          set -euo pipefail
+          keytool -genkeypair -noprompt \
+            -keystore "$PWD/android/ephemeral-smoke.jks" \
+            -storepass temporary-test-only -keypass temporary-test-only \
+            -alias temporary-test -keyalg RSA -keysize 2048 -validity 30 \
+            -dname "CN=Plezy Custom Test, O=Temporary CI"
+          cat > android/key.properties <<EOF
+          storePassword=temporary-test-only
+          keyPassword=temporary-test-only
+          keyAlias=temporary-test
+          storeFile=$PWD/android/ephemeral-smoke.jks
+          EOF
+      - name: Compile Android ${{ matrix.mode }} APK
+        run: |
+          flutter build apk --${{ matrix.mode }} --target-platform "${{ matrix.platform }}" \
             --dart-define=ENABLE_UPDATE_CHECK=false \
             --dart-define=ENABLE_SENTRY=false
       - name: Verify package and provider IDs
         shell: bash
         run: |
           set -euo pipefail
-          apk=build/app/outputs/flutter-apk/app-debug.apk
+          apk=build/app/outputs/flutter-apk/app-${{ matrix.mode }}.apk
           test -s "$apk"
           # Discover the installed Android build-tools binary; runner PATH varies.
           aapt=$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name aapt | sort -V | tail -1)
@@ -71,10 +93,10 @@ jobs:
             echo 'Official Plezy provider authority present in custom APK' >&2
             exit 1
           fi
-      - name: Upload debug APK (not a production release)
+      - name: Upload test APK (not a production release)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: plezy-custom-${{ matrix.suffix }}-debug-smoke
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: plezy-custom-${{ matrix.suffix }}-${{ matrix.mode }}-smoke
+          path: build/app/outputs/flutter-apk/app-${{ matrix.mode }}.apk
           retention-days: 5
           if-no-files-found: error
