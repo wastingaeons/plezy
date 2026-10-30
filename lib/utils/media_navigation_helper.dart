@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
@@ -7,6 +8,8 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
+import '../models/companion_remote/remote_command.dart';
+import '../providers/companion_remote_provider.dart';
 import '../screens/actor_media_screen.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/main_screen.dart';
@@ -125,6 +128,67 @@ bool shouldOpenEpisodeDetailsForActivation({
   return episodeAction == EpisodeAction.details;
 }
 
+/// Only interrupt taps that would immediately launch local video playback.
+/// Normal media-detail browsing, music, and offline playback keep their
+/// existing activation behavior.
+bool shouldOfferConnectedPlayback({
+  required bool isOffline,
+  required bool isRemote,
+  required bool isConnected,
+  required String? serverId,
+}) => !isOffline && isRemote && isConnected && serverId != null;
+
+/// A cancelled dialog must never accidentally launch a local player.
+enum CompanionPlaybackTarget { local, connected, cancelled }
+
+Future<CompanionPlaybackTarget> _choosePlaybackTarget(
+  BuildContext context,
+  MediaItem item, {
+  required bool isOffline,
+}) async {
+  final remote = context.read<CompanionRemoteProvider?>();
+  if (!shouldOfferConnectedPlayback(
+    isOffline: isOffline,
+    isRemote: remote?.isRemote ?? false,
+    isConnected: remote?.isConnected ?? false,
+    serverId: item.serverId,
+  )) {
+    return CompanionPlaybackTarget.local;
+  }
+
+  final choice = await showDialog<CompanionPlaybackTarget>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Where would you like to play?'),
+      content: Text(item.displayTitle),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(CompanionPlaybackTarget.local),
+          child: const Text('Play Here'),
+        ),
+        FilledButton.icon(
+          icon: const Icon(Icons.cast_rounded),
+          label: const Text('Play on Connected Device'),
+          onPressed: () => Navigator.of(dialogContext).pop(CompanionPlaybackTarget.connected),
+        ),
+      ],
+    ),
+  );
+
+  if (!context.mounted || choice == null) return CompanionPlaybackTarget.cancelled;
+  if (choice == CompanionPlaybackTarget.connected) {
+    // The pairing may have disappeared while the chooser was open.
+    if (remote == null || !remote.isRemote || !remote.isConnected) {
+      return CompanionPlaybackTarget.cancelled;
+    }
+    remote.sendCommand(
+      RemoteCommandType.playMedia,
+      data: {'serverId': item.serverId, 'ratingKey': item.id},
+    );
+  }
+  return choice;
+}
+
 /// Navigates to the appropriate screen based on the item type.
 ///
 /// Accepts a [MediaItem] or a [MediaPlaylist] (typed as [Object] because Dart
@@ -240,6 +304,13 @@ Future<MediaNavigationResult> navigateToMediaItem(
       if (mi.kind == MediaKind.episode && shouldOpenEpisodeDetails) {
         return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
       }
+      final choice = await _choosePlaybackTarget(context, mi, isOffline: isOffline);
+      if (choice == CompanionPlaybackTarget.cancelled || !context.mounted) {
+        return MediaNavigationResult.navigated;
+      }
+      if (choice == CompanionPlaybackTarget.connected) {
+        return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
+      }
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
       if (result == true && context.mounted) {
         onRefresh?.call(mi);
@@ -248,6 +319,13 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.movie:
       if (playDirectly && !shouldOpenContinueWatchingDetails) {
+        final choice = await _choosePlaybackTarget(context, mi, isOffline: isOffline);
+        if (choice == CompanionPlaybackTarget.cancelled || !context.mounted) {
+          return MediaNavigationResult.navigated;
+        }
+        if (choice == CompanionPlaybackTarget.connected) {
+          return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
+        }
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
         if (result == true && context.mounted) {
           onRefresh?.call(mi);
