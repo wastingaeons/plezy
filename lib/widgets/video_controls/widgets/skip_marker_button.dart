@@ -93,13 +93,7 @@ class SkipMarkerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Stack(
             children: [
-              AnimatedBuilder(
-                animation: focusNode,
-                builder: (context, _) {
-                  final focused =
-                      focusNode.hasFocus &&
-                      InputModeTracker.isKeyboardMode(context);
-                  return AnimatedContainer(
+              AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeInOut,
                     padding: EdgeInsets.symmetric(
@@ -139,8 +133,6 @@ class SkipMarkerButton extends StatelessWidget {
                         ),
                       ],
                     ),
-                  );
-                },
               ),
               if (isAutoSkipActive && shouldShowAutoSkip)
                 Positioned.fill(
