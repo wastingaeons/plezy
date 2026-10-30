@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/device_performance.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/platform_detector.dart';
@@ -29,7 +30,8 @@ class FocusTheme {
     // Reduced tier: snap focus transitions (scale/border/glow) instead of
     // animating — each animation frame re-rasterizes the focused card.
     if (DevicePerformance.isReduced) return Duration.zero;
-    return Theme.of(context).extension<MonoTokens>()?.fast ?? const Duration(milliseconds: 150);
+    return Theme.of(context).extension<MonoTokens>()?.fast ??
+        const Duration(milliseconds: 150);
   }
 
   /// How long a TV row (or the hub list) glides after one D-pad focus step.
@@ -42,8 +44,9 @@ class FocusTheme {
   /// focus border on every press and reads as input lag next to the launcher.
   /// Successive presses (including hold-repeats) retarget the animation from
   /// wherever the row currently is, so a fast series still glides continuously.
-  static Duration navigationScrollDuration() =>
-      PlatformDetector.isAppleTV() ? const Duration(milliseconds: 500) : const Duration(milliseconds: 150);
+  static Duration navigationScrollDuration() => PlatformDetector.isAppleTV()
+      ? const Duration(milliseconds: 500)
+      : const Duration(milliseconds: 150);
 
   /// [radii] overrides [borderRadius] when per-corner radii are needed
   /// (M3E grouped cards: large outer / small inner corners).
@@ -79,13 +82,17 @@ class FocusTheme {
         blurRadius: focusGlowInnerBlurRadius,
         spreadRadius: focusGlowSpreadRadius,
       ),
-      BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: focusGlowOuterBlurRadius),
+      BoxShadow(
+        color: color.withValues(alpha: 0.2),
+        blurRadius: focusGlowOuterBlurRadius,
+      ),
     ];
   }
 
   /// How far the focus glow visibly reaches beyond the card edge. Used to size
   /// the overlay paint area so the blur is not clipped.
-  static double get focusGlowExtent => focusGlowOuterBlurRadius * 2 + focusGlowSpreadRadius;
+  static double get focusGlowExtent =>
+      focusGlowOuterBlurRadius * 2 + focusGlowSpreadRadius;
 
   /// Build focus decoration with background color instead of border.
   /// Useful for video controls where it should match the native hover style.
@@ -97,7 +104,9 @@ class FocusTheme {
   }) {
     return BoxDecoration(
       borderRadius: radii ?? BorderRadius.circular(borderRadius),
-      color: isFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+      color: isFocused
+          ? Colors.white.withValues(alpha: 0.2)
+          : Colors.transparent,
     );
   }
 
@@ -114,7 +123,9 @@ class FocusTheme {
   }) {
     return BoxDecoration(
       borderRadius: radii ?? BorderRadius.circular(borderRadius),
-      color: isFocused ? tokens(context).text.withValues(alpha: 0.12) : Colors.transparent,
+      color: isFocused
+          ? tokens(context).text.withValues(alpha: 0.12)
+          : Colors.transparent,
     );
   }
 }
