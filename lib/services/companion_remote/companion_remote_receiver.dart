@@ -63,7 +63,10 @@ class CompanionRemoteReceiver {
       scheduleFrameIfIdle();
     }
 
-    if (playerOwner == null && _isTransport(command.type) && (musicTransport?.call(command.type) ?? false)) return;
+    if (playerOwner == null &&
+        _isTransport(command.type) &&
+        (musicTransport?.call(command.type) ?? false))
+      return;
 
     switch (command.type) {
       case RemoteCommandType.dpadUp:
@@ -150,7 +153,9 @@ class CompanionRemoteReceiver {
         break;
 
       default:
-        appLogger.w('CompanionRemoteReceiver: Unhandled command type: ${command.type}');
+        appLogger.w(
+          'CompanionRemoteReceiver: Unhandled command type: ${command.type}',
+        );
     }
   }
 }

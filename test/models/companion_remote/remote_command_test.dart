@@ -3,7 +3,10 @@ import 'package:plezy/models/companion_remote/remote_command.dart';
 
 void main() {
   test('playMedia round-trips its payload through JSON', () {
-    const command = RemoteCommand(type: RemoteCommandType.playMedia, data: {'serverId': 'srv1', 'ratingKey': '42'});
+    const command = RemoteCommand(
+      type: RemoteCommandType.playMedia,
+      data: {'serverId': 'srv1', 'ratingKey': '42'},
+    );
 
     final decoded = RemoteCommand.fromJson(command.toJson());
 

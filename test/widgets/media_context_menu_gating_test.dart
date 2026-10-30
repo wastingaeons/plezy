@@ -6,17 +6,20 @@ import 'package:plezy/widgets/media_context_menu.dart';
 
 void main() {
   group('hasKnownNoPlayableMedia', () {
-    test('Plex movie with an explicitly empty version list is metadata-only', () {
-      expect(
-        hasKnownNoPlayableMedia(
-          kind: MediaKind.movie,
-          backend: MediaBackend.plex,
-          mediaVersions: const <MediaVersion>[],
-          leafCount: null,
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'Plex movie with an explicitly empty version list is metadata-only',
+      () {
+        expect(
+          hasKnownNoPlayableMedia(
+            kind: MediaKind.movie,
+            backend: MediaBackend.plex,
+            mediaVersions: const <MediaVersion>[],
+            leafCount: null,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('Jellyfin movie with a null version list fails open (listings omit MediaSources)', () {
       expect(
@@ -30,21 +33,29 @@ void main() {
       );
     });
 
-    test('show with an explicit leafCount of 0 is metadata-only on any backend', () {
-      expect(
-        hasKnownNoPlayableMedia(
-          kind: MediaKind.show,
-          backend: MediaBackend.jellyfin,
-          mediaVersions: null,
-          leafCount: 0,
-        ),
-        isTrue,
-      );
-    });
+    test(
+      'show with an explicit leafCount of 0 is metadata-only on any backend',
+      () {
+        expect(
+          hasKnownNoPlayableMedia(
+            kind: MediaKind.show,
+            backend: MediaBackend.jellyfin,
+            mediaVersions: null,
+            leafCount: 0,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('show with a null leafCount fails open', () {
       expect(
-        hasKnownNoPlayableMedia(kind: MediaKind.show, backend: MediaBackend.plex, mediaVersions: null, leafCount: null),
+        hasKnownNoPlayableMedia(
+          kind: MediaKind.show,
+          backend: MediaBackend.plex,
+          mediaVersions: null,
+          leafCount: null,
+        ),
         isFalse,
       );
     });

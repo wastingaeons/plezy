@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io' show Platform;
+
 import '../media/ids.dart';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -74,7 +76,12 @@ class _MenuAction {
   final String label;
   final bool destructive;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.destructive = false});
+  _MenuAction({
+    required this.value,
+    required this.icon,
+    required this.label,
+    this.destructive = false,
+  });
 }
 
 /// What [MediaContextMenuState] resolves before it can build an entry list:
@@ -175,8 +182,16 @@ List<_MenuAction> _syncDownloadMenuActions({
   );
   if (hasSyncRule) {
     return [
-      _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
-      _MenuAction(value: 'remove_sync', icon: Symbols.sync_disabled_rounded, label: t.downloads.removeSyncRule),
+      _MenuAction(
+        value: 'manage_sync',
+        icon: Symbols.sync_rounded,
+        label: t.downloads.manageSyncRule,
+      ),
+      _MenuAction(
+        value: 'remove_sync',
+        icon: Symbols.sync_disabled_rounded,
+        label: t.downloads.removeSyncRule,
+      ),
       if (hasAnyDownload) deleteDownload(),
     ];
   }
@@ -184,7 +199,11 @@ List<_MenuAction> _syncDownloadMenuActions({
     if (hasAnyDownload)
       deleteDownload()
     else
-      _MenuAction(value: downloadValue, icon: Symbols.download_rounded, label: t.downloads.downloadNow),
+      _MenuAction(
+        value: downloadValue,
+        icon: Symbols.download_rounded,
+        label: t.downloads.downloadNow,
+      ),
   ];
 }
 
@@ -194,7 +213,10 @@ bool isAdminActionAllowedForMediaItem({
   required Profile? activeProfile,
 }) {
   final blockedByPlexHomeRole =
-      itemBackend == MediaBackend.plex && activeProfile != null && activeProfile.isPlexHome && !activeProfile.plexAdmin;
+      itemBackend == MediaBackend.plex &&
+      activeProfile != null &&
+      activeProfile.isPlexHome &&
+      !activeProfile.plexAdmin;
   return isOwnerOrAdmin && !blockedByPlexHomeRole;
 }
 
@@ -231,7 +253,8 @@ bool hasKnownNoPlayableMedia({
   required List<MediaVersion>? mediaVersions,
   required int? leafCount,
 }) => switch (kind) {
-  MediaKind.movie || MediaKind.episode => backend == MediaBackend.plex && (mediaVersions?.isEmpty ?? false),
+  MediaKind.movie || MediaKind.episode =>
+    backend == MediaBackend.plex && (mediaVersions?.isEmpty ?? false),
   MediaKind.show || MediaKind.season => leafCount == 0,
   _ => false,
 };
@@ -245,7 +268,11 @@ class MediaMenuExtraEntry {
   final String label;
   final VoidCallback onSelected;
 
-  const MediaMenuExtraEntry({required this.icon, required this.label, required this.onSelected});
+  const MediaMenuExtraEntry({
+    required this.icon,
+    required this.label,
+    required this.onSelected,
+  });
 }
 
 class MediaContextMenu extends StatefulWidget {
@@ -265,7 +292,8 @@ class MediaContextMenu extends StatefulWidget {
   final VoidCallback? onPlayTrailer;
   final Widget child;
   final bool isInContinueWatching;
-  final String? collectionId; // The collection ID if displaying within a collection
+  final String?
+  collectionId; // The collection ID if displaying within a collection
 
   /// Downloaded content shown without its server, as on the downloads
   /// screen. A collection there is a downloads folder: its menu marks and
@@ -320,7 +348,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// The widget's [item] cast as a [MediaPlaylist]. Returns `null` for media items.
-  MediaPlaylist? get _playlist => widget.item is MediaPlaylist ? widget.item as MediaPlaylist : null;
+  MediaPlaylist? get _playlist =>
+      widget.item is MediaPlaylist ? widget.item as MediaPlaylist : null;
 
   /// Show the context menu programmatically.
   /// Used for keyboard/gamepad long-press activation.
@@ -335,7 +364,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (renderBox != null) {
         final size = renderBox.size;
         final topLeft = renderBox.localToGlobal(Offset.zero);
-        _tapPosition = Offset(topLeft.dx + size.width / 2, topLeft.dy + size.height / 2);
+        _tapPosition = Offset(
+          topLeft.dx + size.width / 2,
+          topLeft.dy + size.height / 2,
+        );
       }
     }
     _showContextMenu(menuContext);
@@ -365,7 +397,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// client instead.
   PlexClient _getClientForItem() {
     final serverId = serverIdOrNull(_itemServerId);
-    return serverId != null ? context.getPlexClientForServer(serverId) : context.getPlexClientWithFallback(null);
+    return serverId != null
+        ? context.getPlexClientForServer(serverId)
+        : context.getPlexClientWithFallback(null);
   }
 
   /// Backend-neutral client for the active item's server. Used by flows
@@ -374,7 +408,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// names its own.
   MediaServerClient _getMediaClientForItem() {
     final serverId = serverIdOrNull(_itemServerId);
-    return serverId != null ? context.getMediaClientForServer(serverId) : context.getMediaClientWithFallback(null);
+    return serverId != null
+        ? context.getMediaClientForServer(serverId)
+        : context.getMediaClientWithFallback(null);
   }
 
   /// [_getMediaClientForItem], or null when there is no such client, for flows
@@ -404,9 +440,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     required MediaItem? item,
     required bool serverOnline,
   }) async {
-    final permissionClient = client is MediaDeletionPermissionClient ? client as MediaDeletionPermissionClient : null;
+    final permissionClient = client is MediaDeletionPermissionClient
+        ? client as MediaDeletionPermissionClient
+        : null;
     if (item == null || permissionClient == null) return null;
-    if (!serverOnline || context.read<OfflineModeProvider>().isOffline) return false;
+    if (!serverOnline || context.read<OfflineModeProvider>().isOffline)
+      return false;
     try {
       return await permissionClient.fetchDeletePermission(item);
     } catch (e, st) {
@@ -417,17 +456,30 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Ask the paired Plezy host to play this item, then display its remote UI.
   /// All playback resolution occurs on the host using its own media server.
-  Future<void> _handlePlayOnConnectedDevice(BuildContext context, MediaItem item) async {
+  Future<void> _handlePlayOnConnectedDevice(
+    BuildContext context,
+    MediaItem item,
+  ) async {
     final serverId = _itemServerId;
     final remote = context.read<CompanionRemoteProvider?>();
-    if (serverId == null || remote == null || !remote.isRemote || !remote.isConnected) return;
+    if (serverId == null ||
+        remote == null ||
+        !remote.isRemote ||
+        !remote.isConnected)
+      return;
 
-    remote.sendCommand(RemoteCommandType.playMedia, data: {'serverId': serverId, 'ratingKey': item.id});
+    remote.sendCommand(
+      RemoteCommandType.playMedia,
+      data: {'serverId': serverId, 'ratingKey': item.id},
+    );
 
     if (!context.mounted) return;
     final deviceName = remote.connectedDevice?.name ?? 'connected device';
     showAppSnackBar(context, 'Sent to $deviceName');
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const MobileRemoteScreen()));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MobileRemoteScreen()),
+    );
   }
 
   void _showContextMenu(BuildContext context) async {
@@ -451,7 +503,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         : _buildItemMenuActions(context, menu);
     for (var i = 0; i < widget.extraEntries.length; i++) {
       final entry = widget.extraEntries[i];
-      menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
+      menuActions.add(
+        _MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label),
+      );
     }
 
     final openedFromKeyboard = _openedFromKeyboard;
@@ -459,7 +513,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     var position = _tapPosition;
     if (position == null) {
-      final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+      final RenderBox? overlay =
+          Overlay.of(context).context.findRenderObject() as RenderBox?;
       final RenderBox renderBox = context.findRenderObject() as RenderBox;
       position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
     }
@@ -491,7 +546,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e, st) {
       appLogger.e('Media context menu action failed', error: e, stackTrace: st);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: localizedErrorReason(e)),
+        );
       }
     } finally {
       _isContextMenuOpen = false;
@@ -511,7 +569,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final playlist = _playlist;
     final mediaKind = mediaItem?.kind;
     final itemBackend = mediaItem?.backend ?? playlist?.backend;
-    if (widget.isOffline && mediaItem != null && mediaKind == MediaKind.collection) {
+    if (widget.isOffline &&
+        mediaItem != null &&
+        mediaKind == MediaKind.collection) {
       return _MenuContext.downloadsFolder(mediaItem);
     }
 
@@ -519,10 +579,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // server-owned flag (folded with the active Plex Home profile's admin
     // bit, when applicable); MediaBrowser servers use `JellyfinConnection.isAdministrator`
     // captured at sign-in.
-    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    final multiServerProvider = Provider.of<MultiServerProvider>(
+      context,
+      listen: false,
+    );
     final activeProfile = context.read<ActiveProfileProvider>().active;
     final isOwnerOrAdmin =
-        _itemServerId != null && multiServerProvider.serverManager.isOwnerOrAdmin(ServerId(_itemServerId!));
+        _itemServerId != null &&
+        multiServerProvider.serverManager.isOwnerOrAdmin(
+          ServerId(_itemServerId!),
+        );
     final isAdmin = isAdminActionAllowedForMediaItem(
       isOwnerOrAdmin: isOwnerOrAdmin,
       itemBackend: itemBackend,
@@ -531,14 +597,21 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     // Backend capabilities gate menu items so we don't expose actions the
     // active server cannot perform.
-    final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(ServerId(_itemServerId!)) : null;
+    final mediaClient = _itemServerId != null
+        ? multiServerProvider.getClientForServer(ServerId(_itemServerId!))
+        : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
     // Static capabilities stay truthy while the server is unreachable, so
     // version/quality choices need a liveness check on top.
     final itemServerOnline =
-        _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
-    final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
-    final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
+        _itemServerId != null &&
+        multiServerProvider.serverManager.isClientOnline(
+          ServerId(_itemServerId!),
+        );
+    final canRemoveFromContinueWatching =
+        mediaClient?.capabilities.continueWatchingRemoval ?? false;
+    final canEditMetadata =
+        isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
     // Watchlist (movies and shows), backed by the connected catalog sources
     // (Trakt, Plex, MAL, ...). Whether THIS item resolves in a source needs
@@ -547,7 +620,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // only offers "Remove" once cached candidates prove membership, so a
     // cold cache can never turn a press into a surprise removal. Opening
     // the menu warms both caches for the tap and the next open.
-    final catalogSources = Provider.of<CatalogSourcesProvider?>(context, listen: false);
+    final catalogSources = Provider.of<CatalogSourcesProvider?>(
+      context,
+      listen: false,
+    );
     var showWatchlistEntry = false;
     var watchlistRemoveOffered = false;
     if (mediaItem != null &&
@@ -556,17 +632,29 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         catalogSources.watchlistCapableSources.isNotEmpty &&
         itemServerOnline &&
         !context.read<OfflineModeProvider>().isOffline) {
-      final cachedCandidates = catalogSources.cachedWatchlistCandidatesFor(mediaItem);
+      final cachedCandidates = catalogSources.cachedWatchlistCandidatesFor(
+        mediaItem,
+      );
       // Resolved-and-empty means no connected source can hold this item.
-      showWatchlistEntry = cachedCandidates == null || cachedCandidates.isNotEmpty;
+      showWatchlistEntry =
+          cachedCandidates == null || cachedCandidates.isNotEmpty;
       watchlistRemoveOffered =
-          cachedCandidates?.any((c) => c.source.isOnWatchlist(mediaItem.kind, c.ids) == true) ?? false;
+          cachedCandidates?.any(
+            (c) => c.source.isOnWatchlist(mediaItem.kind, c.ids) == true,
+          ) ??
+          false;
       if (showWatchlistEntry) {
         unawaited(
-          catalogSources.watchlistCandidatesFor(mediaItem, client: mediaClient).catchError((Object e, StackTrace st) {
-            appLogger.d('Watchlist candidate warm-up failed', error: e, stackTrace: st);
-            return const <WatchlistCandidate>[];
-          }),
+          catalogSources
+              .watchlistCandidatesFor(mediaItem, client: mediaClient)
+              .catchError((Object e, StackTrace st) {
+                appLogger.d(
+                  'Watchlist candidate warm-up failed',
+                  error: e,
+                  stackTrace: st,
+                );
+                return const <WatchlistCandidate>[];
+              }),
         );
         for (final source in catalogSources.watchlistCapableSources) {
           unawaited(source.ensureWatchlistLoaded());
@@ -613,9 +701,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   List<_MenuAction> _buildDownloadsFolderMenuActions(MediaItem folder) {
     return [
       if (!folder.isWatched)
-        _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
+        _MenuAction(
+          value: 'watch',
+          icon: Symbols.check_circle_outline_rounded,
+          label: t.mediaMenu.markAsWatched,
+        ),
       if (folder.isWatched || folder.isPartiallyWatched)
-        _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
+        _MenuAction(
+          value: 'unwatch',
+          icon: Symbols.remove_circle_outline_rounded,
+          label: t.mediaMenu.markAsUnwatched,
+        ),
       _MenuAction(
         value: 'delete_folder_downloads',
         icon: Symbols.delete_rounded,
@@ -626,32 +722,60 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Entries for a playlist or collection.
-  List<_MenuAction> _buildListMenuActions(BuildContext context, _MenuContext menu) {
+  List<_MenuAction> _buildListMenuActions(
+    BuildContext context,
+    _MenuContext menu,
+  ) {
     // Download + sync-rule management. Video and audio playlists and any
     // collection qualify — collections can contain movies, episodes,
     // shows, albums, and artists; audio playlists queue their tracks.
     final playlist = menu.playlist;
     final isDownloadablePlaylist =
-        playlist != null && (playlist.playlistType == 'video' || playlist.playlistType == 'audio');
+        playlist != null &&
+        (playlist.playlistType == 'video' || playlist.playlistType == 'audio');
     return [
-      _MenuAction(value: 'play', icon: Symbols.play_arrow_rounded, label: t.common.play),
-      _MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
-      if ((isDownloadablePlaylist || menu.isCollection) && !PlatformDetector.isAppleTV())
+      _MenuAction(
+        value: 'play',
+        icon: Symbols.play_arrow_rounded,
+        label: t.common.play,
+      ),
+      _MenuAction(
+        value: 'shuffle',
+        icon: Symbols.shuffle_rounded,
+        label: t.mediaMenu.shufflePlay,
+      ),
+      if ((isDownloadablePlaylist || menu.isCollection) &&
+          !PlatformDetector.isAppleTV())
         ..._syncDownloadMenuActions(
-          hasSyncRule: Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context)),
+          hasSyncRule: Provider.of<DownloadProvider>(
+            context,
+            listen: false,
+          ).hasSyncRule(_itemSyncRuleKey(context)),
           hasAnyDownload: false,
-          downloadValue: menu.isPlaylist ? 'download_playlist' : 'download_collection',
+          downloadValue: menu.isPlaylist
+              ? 'download_playlist'
+              : 'download_collection',
         ),
-      _MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete, destructive: true),
+      _MenuAction(
+        value: 'delete',
+        icon: Symbols.delete_rounded,
+        label: t.common.delete,
+        destructive: true,
+      ),
     ];
   }
 
   /// Entries for a single media item, in display order.
-  List<_MenuAction> _buildItemMenuActions(BuildContext context, _MenuContext menu) {
+  List<_MenuAction> _buildItemMenuActions(
+    BuildContext context,
+    _MenuContext menu,
+  ) {
     final mediaItem = menu.mediaItem!;
     final mediaKind = mediaItem.kind;
-    final isMovieOrShow = mediaKind == MediaKind.movie || mediaKind == MediaKind.show;
-    final isMovieOrEpisode = mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
+    final isMovieOrShow =
+        mediaKind == MediaKind.movie || mediaKind == MediaKind.show;
+    final isMovieOrEpisode =
+        mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
     final isPartiallyWatched = mediaItem.isPartiallyWatched;
     final hasActiveProgress = isMovieOrEpisode && mediaItem.hasActiveProgress;
     final isVideoKind = mediaItem.isVideoContent;
@@ -674,21 +798,34 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             mediaKind == MediaKind.season);
 
     // Go to Series (for episodes and seasons) — hide if already on that series' detail screen
-    final ancestorMeta = context.findAncestorWidgetOfExactType<MediaDetailScreen>()?.metadata;
-    final ancestorSeriesKey = ancestorMeta != null && ancestorMeta.kind == MediaKind.season
+    final ancestorMeta = context
+        .findAncestorWidgetOfExactType<MediaDetailScreen>()
+        ?.metadata;
+    final ancestorSeriesKey =
+        ancestorMeta != null && ancestorMeta.kind == MediaKind.season
         ? ancestorMeta.parentId
         : ancestorMeta?.id;
     // For episodes, the show key is grandparentId; for seasons, it's parentId
-    final itemSeriesKey = mediaKind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
+    final itemSeriesKey = mediaKind == MediaKind.episode
+        ? mediaItem.grandparentId
+        : mediaItem.parentId;
 
     return [
       if (mediaKind.isMusic) ..._musicMenuActions(context, menu, mediaItem),
       if (hasActiveProgress)
-        _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
+        _MenuAction(
+          value: 'play_from_beginning',
+          icon: Symbols.replay_rounded,
+          label: t.mediaMenu.playFromBeginning,
+        ),
       // Trailer playback. The detail row may hide its trailer button on small
       // screens, so surface it here whenever the screen wires up onPlayTrailer.
       if (widget.onPlayTrailer != null)
-        _MenuAction(value: 'play_trailer', icon: Symbols.theaters_rounded, label: t.tooltips.playTrailer),
+        _MenuAction(
+          value: 'play_trailer',
+          icon: Symbols.theaters_rounded,
+          label: t.tooltips.playTrailer,
+        ),
       if (canPlayOnConnectedDevice)
         _MenuAction(
           value: 'play_on_connected_device',
@@ -696,9 +833,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           label: 'Play on Connected Device',
         ),
       if (!mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
-        _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
+        _MenuAction(
+          value: 'watch',
+          icon: Symbols.check_circle_outline_rounded,
+          label: t.mediaMenu.markAsWatched,
+        ),
       if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
-        _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
+        _MenuAction(
+          value: 'unwatch',
+          icon: Symbols.remove_circle_outline_rounded,
+          label: t.mediaMenu.markAsUnwatched,
+        ),
       if (widget.isInContinueWatching && menu.canRemoveFromContinueWatching)
         _MenuAction(
           value: 'remove_from_continue_watching',
@@ -706,15 +851,32 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           label: t.mediaMenu.removeFromContinueWatching,
         ),
       if (widget.isInContinueWatching && isVideoKind)
-        _MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails),
-      if (isVideoKind) _MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate),
+        _MenuAction(
+          value: 'details',
+          icon: Symbols.info_rounded,
+          label: t.mediaMenu.viewDetails,
+        ),
+      if (isVideoKind)
+        _MenuAction(
+          value: 'rate',
+          icon: Symbols.star_rounded,
+          label: t.mediaMenu.rate,
+        ),
       // Edit Metadata — admin-only and backend-capability gated.
       if (menu.canEditMetadata)
-        _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
+        _MenuAction(
+          value: 'edit_metadata',
+          icon: Symbols.edit_rounded,
+          label: t.metadataEdit.editMetadata,
+        ),
       // Quick Tag — same admin/capability gate as Edit Metadata, restricted to
       // the kinds whose schema carries a 'label' field on both backends.
       if (menu.canEditMetadata && isMovieOrShow)
-        _MenuAction(value: 'quick_tag', icon: Symbols.label_rounded, label: t.metadataEdit.quickTag),
+        _MenuAction(
+          value: 'quick_tag',
+          icon: Symbols.label_rounded,
+          label: t.metadataEdit.quickTag,
+        ),
       // Match / Unmatch — Plex-only (MediaBrowser servers don't expose match agents).
       if (menu.isPlex && menu.isAdmin && isMovieOrShow) ...[
         _MenuAction(
@@ -722,7 +884,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           icon: Symbols.search_rounded,
           label: isUnmatched ? t.matchScreen.match : t.matchScreen.fixMatch,
         ),
-        if (!isUnmatched) _MenuAction(value: 'unmatch', icon: Symbols.link_off_rounded, label: t.matchScreen.unmatch),
+        if (!isUnmatched)
+          _MenuAction(
+            value: 'unmatch',
+            icon: Symbols.link_off_rounded,
+            label: t.matchScreen.unmatch,
+          ),
       ],
       // Remove from Collection (only when viewing items within a collection).
       // Every backend implements `removeFromCollection`.
@@ -736,11 +903,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           itemSeriesKey != null &&
           !widget.isInContinueWatching &&
           ancestorSeriesKey != itemSeriesKey)
-        _MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries),
+        _MenuAction(
+          value: 'series',
+          icon: Symbols.tv_rounded,
+          label: t.mediaMenu.goToSeries,
+        ),
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season)
-        _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
+        _MenuAction(
+          value: 'shuffle_play',
+          icon: Symbols.shuffle_rounded,
+          label: t.mediaMenu.shufflePlay,
+        ),
       if (canLinkItem(mediaItem))
-        _MenuAction(value: 'show_link', icon: Symbols.link_rounded, label: t.deepLinks.showLink),
+        _MenuAction(
+          value: 'show_link',
+          icon: Symbols.link_rounded,
+          label: t.deepLinks.showLink,
+        ),
       ..._mediaSourceMenuActions(menu, mediaItem),
       ..._libraryMenuActions(context, menu, mediaItem),
     ];
@@ -748,11 +927,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Music (artist/album/track) playback + navigation actions. Queue
   /// insertion only exists where a playback session is bound.
-  List<_MenuAction> _musicMenuActions(BuildContext context, _MenuContext menu, MediaItem mediaItem) {
+  List<_MenuAction> _musicMenuActions(
+    BuildContext context,
+    _MenuContext menu,
+    MediaItem mediaItem,
+  ) {
     final mediaKind = mediaItem.kind;
     // Go to Album (tracks only) — hidden when already on that album's
     // detail screen, mirroring the Go to Series ancestor check.
-    final ancestorAlbumId = context.findAncestorWidgetOfExactType<AlbumDetailScreen>()?.album.id;
+    final ancestorAlbumId = context
+        .findAncestorWidgetOfExactType<AlbumDetailScreen>()
+        ?.album
+        .id;
     // Go to Artist — album: parent, track: grandparent; hidden when
     // already on that artist's detail screen.
     final musicArtistId = switch (mediaKind) {
@@ -760,29 +946,63 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       MediaKind.track => mediaItem.grandparentId,
       _ => null,
     };
-    final ancestorArtistId = context.findAncestorWidgetOfExactType<ArtistDetailScreen>()?.artist.id;
+    final ancestorArtistId = context
+        .findAncestorWidgetOfExactType<ArtistDetailScreen>()
+        ?.artist
+        .id;
     return [
-      _MenuAction(value: 'music_play', icon: Symbols.play_arrow_rounded, label: t.common.play),
+      _MenuAction(
+        value: 'music_play',
+        icon: Symbols.play_arrow_rounded,
+        label: t.common.play,
+      ),
       if (context.read<MusicPlaybackService?>() != null) ...[
-        _MenuAction(value: 'music_play_next', icon: Symbols.playlist_play_rounded, label: t.music.playNext),
-        _MenuAction(value: 'music_add_queue', icon: Symbols.queue_music_rounded, label: t.music.addToQueue),
+        _MenuAction(
+          value: 'music_play_next',
+          icon: Symbols.playlist_play_rounded,
+          label: t.music.playNext,
+        ),
+        _MenuAction(
+          value: 'music_add_queue',
+          icon: Symbols.queue_music_rounded,
+          label: t.music.addToQueue,
+        ),
       ],
       // Instant Mix — capability-gated, and only while the server is
       // reachable (capabilities stay truthy for offline servers).
-      if (menu.itemServerOnline && (menu.mediaClient?.capabilities.instantMix ?? false))
-        _MenuAction(value: 'music_instant_mix', icon: Symbols.wand_stars_rounded, label: t.music.instantMix),
-      if (mediaKind == MediaKind.track && mediaItem.parentId != null && ancestorAlbumId != mediaItem.parentId)
-        _MenuAction(value: 'music_album', icon: Symbols.album_rounded, label: t.music.goToAlbum),
+      if (menu.itemServerOnline &&
+          (menu.mediaClient?.capabilities.instantMix ?? false))
+        _MenuAction(
+          value: 'music_instant_mix',
+          icon: Symbols.wand_stars_rounded,
+          label: t.music.instantMix,
+        ),
+      if (mediaKind == MediaKind.track &&
+          mediaItem.parentId != null &&
+          ancestorAlbumId != mediaItem.parentId)
+        _MenuAction(
+          value: 'music_album',
+          icon: Symbols.album_rounded,
+          label: t.music.goToAlbum,
+        ),
       if (musicArtistId != null && ancestorArtistId != musicArtistId)
-        _MenuAction(value: 'music_artist', icon: Symbols.artist_rounded, label: t.music.goToArtist),
+        _MenuAction(
+          value: 'music_artist',
+          icon: Symbols.artist_rounded,
+          label: t.music.goToArtist,
+        ),
     ];
   }
 
   /// Entries about the item's media files rather than the item itself:
   /// version choice, file info, external player.
-  List<_MenuAction> _mediaSourceMenuActions(_MenuContext menu, MediaItem mediaItem) {
+  List<_MenuAction> _mediaSourceMenuActions(
+    _MenuContext menu,
+    MediaItem mediaItem,
+  ) {
     final mediaKind = mediaItem.kind;
-    final isMovieOrEpisode = mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
+    final isMovieOrEpisode =
+        mediaKind == MediaKind.movie || mediaKind == MediaKind.episode;
     // Play Version (for episodes and movies). Hidden when there's
     // nothing to choose: a single source on a backend that can't
     // transcode (Jellyfin v1, or Plex installs without a working
@@ -796,8 +1016,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // offering versions that can't play (issue #1440).
     final hasVersionChoice = (mediaItem.mediaVersions ?? const []).length > 1;
     return [
-      if (isMovieOrEpisode && (hasVersionChoice || menu.canTranscode) && menu.itemServerOnline)
-        _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
+      if (isMovieOrEpisode &&
+          (hasVersionChoice || menu.canTranscode) &&
+          menu.itemServerOnline)
+        _MenuAction(
+          value: 'play_version',
+          icon: Symbols.video_file_rounded,
+          label: t.mediaMenu.playVersion,
+        ),
       // File Info — every file-backed leaf kind (movies, episodes, tracks,
       // clips). Backend-neutral: both PlexClient and JellyfinClient implement
       // [MediaServerClient.getFileInfo], reading codec/stream metadata from
@@ -807,7 +1033,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // "not available" snackbar. Hidden when the item has no backend marker
       // so we don't fan out to an arbitrary client.
       if (menu.itemBackend != null && mediaKind.hasFileInfo)
-        _MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo),
+        _MenuAction(
+          value: 'fileinfo',
+          icon: Symbols.info_rounded,
+          label: t.mediaMenu.fileInfo,
+        ),
       if (PlatformDetector.supportsExternalPlayers() && isMovieOrEpisode)
         _MenuAction(
           value: 'play_external',
@@ -819,7 +1049,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Download, watchlist, add-to and delete entries — the item's place in
   /// the user's libraries, ending with the destructive one.
-  List<_MenuAction> _libraryMenuActions(BuildContext context, _MenuContext menu, MediaItem mediaItem) {
+  List<_MenuAction> _libraryMenuActions(
+    BuildContext context,
+    _MenuContext menu,
+    MediaItem mediaItem,
+  ) {
     final mediaKind = mediaItem.kind;
     // Download options (for episodes, movies, shows, seasons, albums, and
     // tracks — not artists, whose full discography is too large for a
@@ -827,25 +1061,39 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // skip entirely.
     final canDownload =
         !PlatformDetector.isAppleTV() &&
-        (mediaItem.isVideoContent || mediaKind == MediaKind.album || mediaKind == MediaKind.track);
-    final downloadProvider = canDownload ? Provider.of<DownloadProvider>(context, listen: false) : null;
+        (mediaItem.isVideoContent ||
+            mediaKind == MediaKind.album ||
+            mediaKind == MediaKind.track);
+    final downloadProvider = canDownload
+        ? Provider.of<DownloadProvider>(context, listen: false)
+        : null;
     return [
       if (downloadProvider != null)
         ..._syncDownloadMenuActions(
           hasSyncRule: downloadProvider.hasSyncRule(_itemSyncRuleKey(context)),
-          hasAnyDownload: downloadProvider.getProgress(mediaItem.globalKey) != null,
+          hasAnyDownload:
+              downloadProvider.getProgress(mediaItem.globalKey) != null,
           downloadValue: 'download',
         ),
       if (menu.showWatchlistEntry)
         _MenuAction(
           value: 'toggle_watchlist',
-          icon: menu.watchlistRemoveOffered ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
-          label: menu.watchlistRemoveOffered ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
+          icon: menu.watchlistRemoveOffered
+              ? Symbols.bookmark_remove_rounded
+              : Symbols.bookmark_add_rounded,
+          label: menu.watchlistRemoveOffered
+              ? t.explore.removeFromWatchlist
+              : t.explore.addToWatchlist,
         ),
       // Add to... (for episodes, movies, shows, and seasons). Every backend
       // implements the playlist and collection create/add calls; which
       // destinations are offered follows [_MenuContext.canManageCollections].
-      if (mediaItem.isVideoContent) _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
+      if (mediaItem.isVideoContent)
+        _MenuAction(
+          value: 'add_to',
+          icon: Symbols.add_rounded,
+          label: t.common.addTo,
+        ),
       // Delete media item (for episodes, movies, shows, and seasons). Routed
       // through `MediaServerClient.deleteMediaItem`, which every backend
       // implements (DELETE /library/metadata/{id} for Plex and
@@ -885,7 +1133,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       return;
     }
     if (menu.isDownloadsFolder) {
-      await _dispatchDownloadsFolderSelection(context, selected, menu.mediaItem!);
+      await _dispatchDownloadsFolderSelection(
+        context,
+        selected,
+        menu.mediaItem!,
+      );
     } else if (menu.isCollection || menu.isPlaylist) {
       await _dispatchListSelection(context, selected, menu);
     } else {
@@ -900,7 +1152,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  Future<void> _dispatchListSelection(BuildContext context, String? selected, _MenuContext menu) async {
+  Future<void> _dispatchListSelection(
+    BuildContext context,
+    String? selected,
+    _MenuContext menu,
+  ) async {
     switch (selected) {
       case 'play':
         await _handlePlay(context, menu.isCollection, menu.isPlaylist);
@@ -909,7 +1165,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await _handleShuffle(context, menu.isCollection, menu.isPlaylist);
         break;
       case 'download_playlist' || 'download_collection':
-        await _handleDownloadList(context, isPlaylist: selected == 'download_playlist');
+        await _handleDownloadList(
+          context,
+          isPlaylist: selected == 'download_playlist',
+        );
         break;
       case 'manage_sync':
         await _handleManageSyncRule(context);
@@ -923,10 +1182,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  Future<void> _dispatchDownloadsFolderSelection(BuildContext context, String? selected, MediaItem folder) async {
+  Future<void> _dispatchDownloadsFolderSelection(
+    BuildContext context,
+    String? selected,
+    MediaItem folder,
+  ) async {
     switch (selected) {
       case 'watch' || 'unwatch':
-        await setDownloadsFolderWatched(context, folder, watched: selected == 'watch');
+        await setDownloadsFolderWatched(
+          context,
+          folder,
+          watched: selected == 'watch',
+        );
       case 'delete_folder_downloads':
         await deleteDownloadsFolder(context, folder);
     }
@@ -945,7 +1212,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       case 'play_from_beginning':
         outcome.didNavigate = true;
         if (context.mounted) {
-          await navigateToVideoPlayer(context, metadata: mediaItem.copyWith(viewOffsetMs: 0), resolveWatchState: false);
+          await navigateToVideoPlayer(
+            context,
+            metadata: mediaItem.copyWith(viewOffsetMs: 0),
+            resolveWatchState: false,
+          );
         }
         break;
       case 'play_trailer':
@@ -954,31 +1225,51 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'play_on_connected_device':
         outcome.didNavigate = true;
-        if (context.mounted) await _handlePlayOnConnectedDevice(context, mediaItem);
+        if (context.mounted)
+          await _handlePlayOnConnectedDevice(context, mediaItem);
         break;
       case 'watch' || 'unwatch':
-        await _handleSetWatched(context, mediaItem, watched: selected == 'watch');
+        await _handleSetWatched(
+          context,
+          mediaItem,
+          watched: selected == 'watch',
+        );
         break;
       case 'remove_from_continue_watching':
         await _handleRemoveFromContinueWatching(context, mediaItem);
         break;
       case 'details':
         outcome.didNavigate = true;
-        if (context.mounted) await navigateToMediaItemDetails(context, mediaItem, onRefresh: _notifyRefresh);
+        if (context.mounted)
+          await navigateToMediaItemDetails(
+            context,
+            mediaItem,
+            onRefresh: _notifyRefresh,
+          );
         break;
       case 'rate':
         if (context.mounted) await _handleRate(context, mediaItem);
         break;
       case 'edit_metadata':
         outcome.didNavigate = true;
-        if (context.mounted) await _pushAndRefresh(context, mediaItem, MetadataEditScreen(metadata: mediaItem));
+        if (context.mounted)
+          await _pushAndRefresh(
+            context,
+            mediaItem,
+            MetadataEditScreen(metadata: mediaItem),
+          );
         break;
       case 'quick_tag':
         if (context.mounted) await _showQuickTagDialog(context, mediaItem);
         break;
       case 'match':
         outcome.didNavigate = true;
-        if (context.mounted) await _pushAndRefresh(context, mediaItem, PlexMatchScreen(metadata: mediaItem));
+        if (context.mounted)
+          await _pushAndRefresh(
+            context,
+            mediaItem,
+            PlexMatchScreen(metadata: mediaItem),
+          );
         break;
       case 'unmatch':
         await _handleUnmatch(context, mediaItem);
@@ -1029,7 +1320,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
         break;
       case 'add_to':
-        await _showAddToSubmenu(context, offerCollections: menu.canManageCollections);
+        await _showAddToSubmenu(
+          context,
+          offerCollections: menu.canManageCollections,
+        );
         break;
       case 'delete_media':
         await _handleDeleteMediaItem(context, mediaItem.kind);
@@ -1038,20 +1332,30 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await _handleMusicPlay(context);
         break;
       case 'music_play_next' || 'music_add_queue':
-        await _handleMusicEnqueue(context, playNext: selected == 'music_play_next');
+        await _handleMusicEnqueue(
+          context,
+          playNext: selected == 'music_play_next',
+        );
         break;
       case 'music_instant_mix':
         await playInstantMix(context, mediaItem);
         break;
       case 'music_album':
         outcome.didNavigate = true;
-        await _navigateToRelated(context, mediaItem.parentId, navigateToAlbum, t.common.error);
+        await _navigateToRelated(
+          context,
+          mediaItem.parentId,
+          navigateToAlbum,
+          t.common.error,
+        );
         break;
       case 'music_artist':
         outcome.didNavigate = true;
         await _navigateToRelated(
           context,
-          mediaItem.kind == MediaKind.album ? mediaItem.parentId : mediaItem.grandparentId,
+          mediaItem.kind == MediaKind.album
+              ? mediaItem.parentId
+              : mediaItem.grandparentId,
           navigateToArtist,
           t.common.error,
         );
@@ -1061,21 +1365,41 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Mark [item] watched or unwatched; offline, the change is queued for
   /// later sync instead.
-  Future<void> _handleSetWatched(BuildContext context, MediaItem item, {required bool watched}) async {
+  Future<void> _handleSetWatched(
+    BuildContext context,
+    MediaItem item, {
+    required bool watched,
+  }) async {
     final isOffline = context.read<OfflineModeProvider>().isOffline;
     if (isOffline && item.serverId != null) {
       // Queue for later sync — the offline provider emits the WatchStateEvent.
-      await WatchActions.setWatched(context, item, watched: watched, offline: true);
+      await WatchActions.setWatched(
+        context,
+        item,
+        watched: watched,
+        offline: true,
+      );
       if (context.mounted) {
-        showAppSnackBar(context, watched ? t.messages.markedAsWatchedOffline : t.messages.markedAsUnwatchedOffline);
+        showAppSnackBar(
+          context,
+          watched
+              ? t.messages.markedAsWatchedOffline
+              : t.messages.markedAsUnwatchedOffline,
+        );
         _notifyRefresh(item);
       }
     } else {
       await _executeAction(context, () async {
-        final outcome = await WatchActions.setWatched(context, item, watched: watched, offline: false);
+        final outcome = await WatchActions.setWatched(
+          context,
+          item,
+          watched: watched,
+          offline: false,
+        );
         // Nothing was marked: the item names no server, or its server has no
         // client. Report that rather than a success.
-        if (outcome == WatchMarkOutcome.skipped) throw const _ItemServerUnavailable();
+        if (outcome == WatchMarkOutcome.skipped)
+          throw const _ItemServerUnavailable();
       }, watched ? t.messages.markedAsWatched : t.messages.markedAsUnwatched);
     }
   }
@@ -1083,7 +1407,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Remove from Continue Watching without affecting watch status or progress.
   /// This preserves the progression for partially watched items and doesn't
   /// mark unwatched next episodes as watched.
-  Future<void> _handleRemoveFromContinueWatching(BuildContext context, MediaItem item) async {
+  Future<void> _handleRemoveFromContinueWatching(
+    BuildContext context,
+    MediaItem item,
+  ) async {
     try {
       await WatchActions.removeFromContinueWatching(context, item);
       if (context.mounted) {
@@ -1096,7 +1423,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: localizedErrorReason(e)),
+        );
       }
     }
   }
@@ -1107,36 +1437,47 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await _showRatingSheet(context, item, client);
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: localizedErrorReason(e)),
+        );
       }
     }
   }
 
   /// Push a full-screen editor for [item] and refresh its source once it pops.
-  Future<void> _pushAndRefresh(BuildContext context, MediaItem item, Widget screen) async {
+  Future<void> _pushAndRefresh(
+    BuildContext context,
+    MediaItem item,
+    Widget screen,
+  ) async {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
     _notifyRefresh(item);
   }
 
   /// Open the show an episode or season belongs to, landing on that season
   /// and episode.
-  Future<void> _navigateToSeries(BuildContext context, MediaItem item) => _navigateToRelated(
-    context,
-    item.kind == MediaKind.season ? item.parentId : item.grandparentId,
-    (context, series) async {
-      final target = mediaDetailNavigationTargetFor(item, metadataOverride: series);
-      await Navigator.push(
+  Future<void> _navigateToSeries(BuildContext context, MediaItem item) =>
+      _navigateToRelated(
         context,
-        mediaDetailRoute(
-          metadata: target.metadata,
-          initialSeasonIndex: target.initialSeasonIndex,
-          initialSeasonId: target.initialSeasonId,
-          initialEpisodeId: target.initialEpisodeId,
-        ),
+        item.kind == MediaKind.season ? item.parentId : item.grandparentId,
+        (context, series) async {
+          final target = mediaDetailNavigationTargetFor(
+            item,
+            metadataOverride: series,
+          );
+          await Navigator.push(
+            context,
+            mediaDetailRoute(
+              metadata: target.metadata,
+              initialSeasonIndex: target.initialSeasonIndex,
+              initialSeasonId: target.initialSeasonId,
+              initialEpisodeId: target.initialEpisodeId,
+            ),
+          );
+        },
+        t.messages.errorLoadingSeries,
       );
-    },
-    t.messages.errorLoadingSeries,
-  );
 
   List<AppMenuEntry<String>> _menuEntries(List<_MenuAction> actions) {
     return [
@@ -1167,10 +1508,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }) async {
     List<WatchlistCandidate> candidates;
     try {
-      candidates = await catalogSources.watchlistCandidatesFor(item, client: client);
+      candidates = await catalogSources.watchlistCandidatesFor(
+        item,
+        client: client,
+      );
     } catch (e, st) {
-      appLogger.w('Watchlist candidate resolution failed', error: e, stackTrace: st);
-      if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
+      appLogger.w(
+        'Watchlist candidate resolution failed',
+        error: e,
+        stackTrace: st,
+      );
+      if (context.mounted)
+        showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
       return;
     }
     if (!context.mounted) return;
@@ -1200,17 +1549,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       // Membership updates optimistically inside the source; Explore rows
       // and open detail screens listening to watchlistChanges follow.
-      if (!await mutateWatchlistMembership(item.kind, candidate, add: add)) return;
+      if (!await mutateWatchlistMembership(item.kind, candidate, add: add))
+        return;
       if (!context.mounted) return;
-      showSuccessSnackBar(context, add ? t.explore.addedToWatchlist : t.explore.removedFromWatchlist);
+      showSuccessSnackBar(
+        context,
+        add ? t.explore.addedToWatchlist : t.explore.removedFromWatchlist,
+      );
     } catch (e, st) {
       appLogger.w('Watchlist update failed', error: e, stackTrace: st);
-      if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
+      if (context.mounted)
+        showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
     }
   }
 
   /// Execute an action with error handling and refresh
-  Future<void> _executeAction(BuildContext context, Future<void> Function() action, String successMessage) async {
+  Future<void> _executeAction(
+    BuildContext context,
+    Future<void> Function() action,
+    String successMessage,
+  ) async {
     try {
       await action();
       if (context.mounted) {
@@ -1219,7 +1577,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        final reason = e is _ItemServerUnavailable ? t.errors.reasonUnreachable : localizedErrorReason(e);
+        final reason = e is _ItemServerUnavailable
+            ? t.errors.reasonUnreachable
+            : localizedErrorReason(e);
         showErrorSnackBar(context, t.messages.errorLoading(error: reason));
       }
     }
@@ -1254,7 +1614,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: localizedErrorReason(e)),
+        );
       }
     }
   }
@@ -1301,7 +1664,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // Same back-trapping spinner as [showLoadingDialog]: nothing the
           // user can do mid-fetch is better than backing into the screen
           // underneath while the pop is pending.
-          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+          builder: (_) => const PopScope(
+            canPop: false,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         );
       }
 
@@ -1318,14 +1684,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await OverlaySheetController.showAdaptive(
           this.context,
           isScrollControlled: true,
-          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
+          builder: (context) =>
+              FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
         );
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
       }
     } catch (e) {
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoadingFileInfo(error: localizedErrorReason(e)),
+        );
       }
     } finally {
       await loadingDialog.dismiss();
@@ -1347,7 +1717,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         loadingDialog.show(
           context,
-          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+          builder: (_) => const PopScope(
+            canPop: false,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         );
       }
 
@@ -1359,9 +1732,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           .firstOrNull;
       if (labelField == null) return;
 
-      final recent = (profileId == null || profileId.isEmpty || serverId == null)
+      final recent =
+          (profileId == null || profileId.isEmpty || serverId == null)
           ? const <String>[]
-          : RecentTagsService.getRecentTags(profileId: profileId, serverId: serverId, fieldId: 'label');
+          : RecentTagsService.getRecentTags(
+              profileId: profileId,
+              serverId: serverId,
+              fieldId: 'label',
+            );
       final suggestionsFuture = adapter
           .fetchTagSuggestions(draft, labelField)
           .then(
@@ -1396,7 +1774,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         loadingDialog.show(
           context,
-          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+          builder: (_) => const PopScope(
+            canPop: false,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         );
       }
       final saved = await adapter.save(draft);
@@ -1455,12 +1836,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       fetch: () => _musicTracksForItem(item),
       playContext: MusicPlayContext(
         title: item.displayTitle,
-        kind: item.kind == MediaKind.artist ? MusicPlayContextKind.artist : MusicPlayContextKind.album,
+        kind: item.kind == MediaKind.artist
+            ? MusicPlayContextKind.artist
+            : MusicPlayContextKind.album,
       ),
     );
   }
 
-  Future<void> _handleMusicEnqueue(BuildContext context, {required bool playNext}) async {
+  Future<void> _handleMusicEnqueue(
+    BuildContext context, {
+    required bool playNext,
+  }) async {
     final service = context.read<MusicPlaybackService?>();
     // Menu entries are hidden without a session; defensive re-check.
     if (service == null) return;
@@ -1469,10 +1855,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       tracks = await _musicTracksForItem(_mediaItem!);
     } catch (_) {
-      if (!context.mounted || service.queueSessionRevision != queueSessionRevision) return;
+      if (!context.mounted ||
+          service.queueSessionRevision != queueSessionRevision)
+        return;
       rethrow;
     }
-    if (!context.mounted || service.queueSessionRevision != queueSessionRevision || tracks.isEmpty) return;
+    if (!context.mounted ||
+        service.queueSessionRevision != queueSessionRevision ||
+        tracks.isEmpty)
+      return;
     if (playNext) {
       service.addNext(tracks);
     } else {
@@ -1488,12 +1879,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaItem = _mediaItem;
     if (mediaItem == null) return;
     final launcher = MediaListPlaybackLauncher.forItem(context, mediaItem);
-    await launcher.launchShuffledShow(metadata: mediaItem, showLoadingIndicator: true);
+    await launcher.launchShuffledShow(
+      metadata: mediaItem,
+      showLoadingIndicator: true,
+    );
   }
 
   /// Show submenu for Add to... (Playlist or Collection). Without collection
   /// rights the only destination is a playlist, so its picker opens directly.
-  Future<void> _showAddToSubmenu(BuildContext context, {required bool offerCollections}) async {
+  Future<void> _showAddToSubmenu(
+    BuildContext context, {
+    required bool offerCollections,
+  }) async {
     if (!offerCollections) {
       await _showAddToPlaylistDialog(context);
       return;
@@ -1502,8 +1899,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       context,
       title: t.common.addTo,
       options: [
-        (icon: Symbols.playlist_play_rounded, label: t.playlists.playlist, value: 'playlist'),
-        (icon: Symbols.collections_rounded, label: t.collections.collection, value: 'collection'),
+        (
+          icon: Symbols.playlist_play_rounded,
+          label: t.playlists.playlist,
+          value: 'playlist',
+        ),
+        (
+          icon: Symbols.collections_rounded,
+          label: t.collections.collection,
+          value: 'collection',
+        ),
       ],
     );
 
@@ -1533,9 +1938,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         item: item,
         client: client,
         result: result,
-        createPrompt: (title: t.playlists.create, label: t.playlists.playlistName, hint: t.playlists.enterPlaylistName),
+        createPrompt: (
+          title: t.playlists.create,
+          label: t.playlists.playlistName,
+          hint: t.playlists.enterPlaylistName,
+        ),
         create: (name) => client.createPlaylist(title: name, items: [item]),
-        createdLog: (playlist) => 'Successfully created playlist: ${playlist.title}',
+        createdLog: (playlist) =>
+            'Successfully created playlist: ${playlist.title}',
         eagerSyncId: (_) => null,
         add: () => client.addToPlaylist(playlistId: result, items: [item]),
         messages: (
@@ -1547,9 +1957,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         notifyChanged: () => LibraryRefreshNotifier().notifyPlaylistsChanged(),
       );
     } catch (e, stackTrace) {
-      appLogger.e('Error in add to playlist flow', error: e, stackTrace: stackTrace);
+      appLogger.e(
+        'Error in add to playlist flow',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (context.mounted) {
-        showErrorSnackBar(context, '${t.playlists.errorLoading}: ${localizedErrorReason(e)}');
+        showErrorSnackBar(
+          context,
+          '${t.playlists.errorLoading}: ${localizedErrorReason(e)}',
+        );
       }
     }
   }
@@ -1565,7 +1982,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // a metadata round-trip and the show's library if missing. Both
       // backends store this on [MediaItem.libraryId].
       String? libraryId = item.libraryId;
-      appLogger.d('Resolving libraryId for ${item.title} (initial: $libraryId)');
+      appLogger.d(
+        'Resolving libraryId for ${item.title} (initial: $libraryId)',
+      );
 
       if (libraryId == null || libraryId.isEmpty) {
         try {
@@ -1577,7 +1996,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       }
 
-      if ((libraryId == null || libraryId.isEmpty) && item.grandparentId != null) {
+      if ((libraryId == null || libraryId.isEmpty) &&
+          item.grandparentId != null) {
         try {
           final parentMeta = await client.fetchItem(item.grandparentId!);
           libraryId = parentMeta?.libraryId;
@@ -1589,7 +2009,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (libraryId == null || libraryId.isEmpty) {
         if (context.mounted) {
-          showErrorSnackBar(context, t.messages.unableToDetermineLibrarySection);
+          showErrorSnackBar(
+            context,
+            t.messages.unableToDetermineLibrarySection,
+          );
         }
         return;
       }
@@ -1598,7 +2021,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       final result = await showScopedDialog<String>(
         context: context,
-        builder: (context) => CollectionSelectionDialog(client: client, libraryId: resolvedLibraryId),
+        builder: (context) => CollectionSelectionDialog(
+          client: client,
+          libraryId: resolvedLibraryId,
+        ),
       );
 
       if (result == null || !context.mounted) return;
@@ -1614,8 +2040,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           label: t.collections.collectionName,
           hint: t.collections.enterCollectionName,
         ),
-        create: (name) =>
-            client.createCollection(libraryId: resolvedLibraryId, title: name, items: [item], itemKind: itemKind),
+        create: (name) => client.createCollection(
+          libraryId: resolvedLibraryId,
+          title: name,
+          items: [item],
+          itemKind: itemKind,
+        ),
         createdLog: (id) => 'Successfully created collection with ID: $id',
         eagerSyncId: (id) => id,
         add: () => client.addToCollection(collectionId: result, items: [item]),
@@ -1625,12 +2055,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           added: t.collections.addedToCollection,
           addError: t.collections.errorAddingToCollection,
         ),
-        notifyChanged: () => LibraryRefreshNotifier().notifyCollectionsChanged(),
+        notifyChanged: () =>
+            LibraryRefreshNotifier().notifyCollectionsChanged(),
       );
     } catch (e, stackTrace) {
-      appLogger.e('Error in add to collection flow', error: e, stackTrace: stackTrace);
+      appLogger.e(
+        'Error in add to collection flow',
+        error: e,
+        stackTrace: stackTrace,
+      );
       if (context.mounted) {
-        showErrorSnackBar(context, '${t.collections.errorAddingToCollection}: ${localizedErrorReason(e)}');
+        showErrorSnackBar(
+          context,
+          '${t.collections.errorAddingToCollection}: ${localizedErrorReason(e)}',
+        );
       }
     }
   }
@@ -1651,7 +2089,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     required String Function(T created) createdLog,
     required String? Function(T created) eagerSyncId,
     required Future<bool> Function() add,
-    required ({String created, String createError, String added, String addError}) messages,
+    required ({
+      String created,
+      String createError,
+      String added,
+      String addError,
+    })
+    messages,
     required VoidCallback notifyChanged,
   }) async {
     if (result == '_create_new') {
@@ -1693,13 +2137,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         notifyChanged();
         _triggerEagerSyncIfRuleExists(context, client.serverId, result);
       } else {
-        appLogger.e('Failed to add item(s) to $kind $result - API returned false');
+        appLogger.e(
+          'Failed to add item(s) to $kind $result - API returned false',
+        );
         showErrorSnackBar(context, messages.addError);
       }
     }
   }
 
-  Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
+  Future<void> _showRatingSheet(
+    BuildContext context,
+    MediaItem item,
+    MediaServerClient client,
+  ) async {
     if (!mounted) return;
     // Presented from the menu's own context so a screen-level
     // OverlaySheetHost is found (see _showContextMenu).
@@ -1716,7 +2166,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     );
   }
 
-  Future<void> _handleRemoveFromCollection(BuildContext context, MediaItem item) async {
+  Future<void> _handleRemoveFromCollection(
+    BuildContext context,
+    MediaItem item,
+  ) async {
     final client = _getMediaClientForItem();
 
     if (widget.collectionId == null) {
@@ -1728,14 +2181,21 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.collections.removeFromCollection,
-      message: t.collections.removeFromCollectionConfirm(title: item.displayTitle),
+      message: t.collections.removeFromCollectionConfirm(
+        title: item.displayTitle,
+      ),
     );
 
     if (!confirmed || !context.mounted) return;
 
     try {
-      appLogger.d('Removing item ${item.id} from collection ${widget.collectionId}');
-      final success = await client.removeFromCollection(collectionId: widget.collectionId!, item: item);
+      appLogger.d(
+        'Removing item ${item.id} from collection ${widget.collectionId}',
+      );
+      final success = await client.removeFromCollection(
+        collectionId: widget.collectionId!,
+        item: item,
+      );
 
       if (context.mounted) {
         if (success) {
@@ -1751,7 +2211,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to remove from collection', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.collections.removeFromCollectionError(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.collections.removeFromCollectionError(
+            error: localizedErrorReason(e),
+          ),
+        );
       }
     }
   }
@@ -1769,7 +2234,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Dispatches to the right launcher implementation based on the item's
   /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
   /// in-memory queue locally.
-  Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
+  Future<void> _launchCollectionOrPlaylist(
+    BuildContext context, {
+    required bool shuffle,
+  }) async {
     final playlist = _playlist;
     if (playlist != null && playlist.playlistType == 'audio') {
       await playAudioPlaylist(
@@ -1778,21 +2246,38 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         playlist: playlist,
         shuffle: shuffle,
         onError: (e, st) {
-          appLogger.w('Failed to fetch audio playlist ${playlist.id}', error: e, stackTrace: st);
-          showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+          appLogger.w(
+            'Failed to fetch audio playlist ${playlist.id}',
+            error: e,
+            stackTrace: st,
+          );
+          showErrorSnackBar(
+            context,
+            t.messages.errorLoading(error: localizedErrorReason(e)),
+          );
         },
-        onEmpty: () => showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems),
+        onEmpty: () => showErrorSnackBar(
+          context,
+          t.messages.failedToCreatePlayQueueNoItems,
+        ),
       );
       return;
     }
 
     // Launcher accepts both MediaItem (for collections) and MediaPlaylist.
     final launcher = MediaListPlaybackLauncher.forItem(context, widget.item);
-    await launcher.launchFromCollectionOrPlaylist(item: widget.item, shuffle: shuffle);
+    await launcher.launchFromCollectionOrPlaylist(
+      item: widget.item,
+      shuffle: shuffle,
+    );
   }
 
   /// Handle delete action for collections and playlists
-  Future<void> _handleDelete(BuildContext context, bool _, bool isPlaylist) async {
+  Future<void> _handleDelete(
+    BuildContext context,
+    bool _,
+    bool isPlaylist,
+  ) async {
     final client = _getMediaClientForItem();
 
     if (isPlaylist) {
@@ -1826,7 +2311,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to delete collection', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.collections.deleteFailedWithError(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.collections.deleteFailedWithError(error: localizedErrorReason(e)),
+        );
       }
     }
   }
@@ -1838,8 +2326,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final item = _mediaItem!;
 
     // Check if the item is downloaded and use local file path if available
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final offlineWatchService = Provider.of<OfflineWatchSyncService>(context, listen: false);
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
+    final offlineWatchService = Provider.of<OfflineWatchSyncService>(
+      context,
+      listen: false,
+    );
     // A downloaded file plays without its server, so a missing client only
     // matters when streaming.
     final client = _tryGetMediaClientForItem();
@@ -1847,7 +2341,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
       if (videoPath != null && context.mounted) {
-        final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+        final videoUrl = videoPath.contains('://')
+            ? videoPath
+            : 'file://$videoPath';
         await ExternalPlayerService.launch(
           context: context,
           videoUrl: videoUrl,
@@ -1861,7 +2357,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     if (!context.mounted) return;
     if (client == null) {
-      showErrorSnackBar(context, t.messages.errorLoading(error: t.errors.reasonUnreachable));
+      showErrorSnackBar(
+        context,
+        t.messages.errorLoading(error: t.errors.reasonUnreachable),
+      );
       return;
     }
     await ExternalPlayerService.launch(
@@ -1876,12 +2375,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// dialog wired to [showListDownloadOptionsAndQueue] via
   /// [fetchAndQueueListDownload]. Playlists synthesise their root metadata
   /// inside [downloadPlaylist]; collections pass the item itself.
-  Future<void> _handleDownloadList(BuildContext context, {required bool isPlaylist}) async {
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+  Future<void> _handleDownloadList(
+    BuildContext context, {
+    required bool isPlaylist,
+  }) async {
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
     final client = _getMediaClientForItem();
 
     if (isPlaylist) {
-      await downloadPlaylist(context, client: client, downloadProvider: downloadProvider, playlist: _playlist!);
+      await downloadPlaylist(
+        context,
+        client: client,
+        downloadProvider: downloadProvider,
+        playlist: _playlist!,
+      );
       return;
     }
 
@@ -1903,15 +2413,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
     // Backend-agnostic resolve so Jellyfin items can be downloaded too.
     final client = _getMediaClientForItem();
-    await queueDownloadWithFeedback(context, metadata: _mediaItem!, client: client, downloadProvider: downloadProvider);
+    await queueDownloadWithFeedback(
+      context,
+      metadata: _mediaItem!,
+      client: client,
+      downloadProvider: downloadProvider,
+    );
   }
 
   /// Handle delete download action
   Future<void> _handleDeleteDownload(BuildContext context) async {
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final downloadProvider = Provider.of<DownloadProvider>(
+      context,
+      listen: false,
+    );
     final item = _mediaItem!;
     final globalKey = item.globalKey;
 
@@ -1925,7 +2446,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     try {
       // Use smart deletion handler (shows progress only if >500ms)
-      await SmartDeletionHandler.deleteWithProgress(context: context, provider: downloadProvider, globalKey: globalKey);
+      await SmartDeletionHandler.deleteWithProgress(
+        context: context,
+        provider: downloadProvider,
+        globalKey: globalKey,
+      );
 
       if (context.mounted) {
         showSuccessSnackBar(context, t.downloads.downloadDeleted);
@@ -1937,7 +2462,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
       if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
+        showErrorSnackBar(
+          context,
+          t.messages.errorLoading(error: localizedErrorReason(e)),
+        );
       }
     }
   }
@@ -1959,7 +2487,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (serverId == null) return globalKey;
     final client = context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) return globalKey;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(client, _itemId(), serverId: ServerId(serverId));
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      client,
+      _itemId(),
+      serverId: ServerId(serverId),
+    );
   }
 
   String _itemDisplayTitle() => switch (widget.item) {
@@ -1995,32 +2527,52 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Fire-and-forget: if a sync rule exists for the target list, run it now so
   /// newly-added items download immediately instead of waiting for the next
   /// cooldown-gated general pass. Fails silently — errors are logged only.
-  static void _triggerEagerSyncIfRuleExists(BuildContext context, ServerId serverId, String listId) {
+  static void _triggerEagerSyncIfRuleExists(
+    BuildContext context,
+    ServerId serverId,
+    String listId,
+  ) {
     try {
-      final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-      final client = Provider.of<MultiServerProvider>(context, listen: false).getClientForServer(serverId);
+      final downloadProvider = Provider.of<DownloadProvider>(
+        context,
+        listen: false,
+      );
+      final client = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      ).getClientForServer(serverId);
       final globalKey = client == null
           ? buildGlobalKey(ServerId(serverId), listId)
-          : downloadProvider.syncRuleKeyForClient(client, listId, serverId: serverId);
+          : downloadProvider.syncRuleKeyForClient(
+              client,
+              listId,
+              serverId: serverId,
+            );
       if (!downloadProvider.hasSyncRule(globalKey)) return;
-      final serverManager = Provider.of<MultiServerProvider>(context, listen: false).serverManager;
+      final serverManager = Provider.of<MultiServerProvider>(
+        context,
+        listen: false,
+      ).serverManager;
       unawaited(
-        downloadProvider.executeSyncRuleFor(globalKey, serverManager).catchError((e) {
-          appLogger.w('Eager sync-rule run failed for $globalKey: $e');
-          return null;
-        }),
+        downloadProvider
+            .executeSyncRuleFor(globalKey, serverManager)
+            .catchError((e) {
+              appLogger.w('Eager sync-rule run failed for $globalKey: $e');
+              return null;
+            }),
       );
     } catch (e) {
       appLogger.w('Failed to schedule eager sync-rule run: $e');
     }
   }
 
-  Future<void> _handleRemoveSyncRule(BuildContext context) => removeSyncRuleAndSnack(
-    context,
-    downloadProvider: context.read<DownloadProvider>(),
-    globalKey: _itemSyncRuleKey(context),
-    displayTitle: _itemDisplayTitle(),
-  );
+  Future<void> _handleRemoveSyncRule(BuildContext context) =>
+      removeSyncRuleAndSnack(
+        context,
+        downloadProvider: context.read<DownloadProvider>(),
+        globalKey: _itemSyncRuleKey(context),
+        displayTitle: _itemDisplayTitle(),
+      );
 
   /// Handle delete media item action.
   ///
@@ -2030,13 +2582,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// item — reports what the server will actually destroy. When that cannot
   /// be established, the dialog says so instead of implying single-file
   /// scope (#1781).
-  Future<void> _handleDeleteMediaItem(BuildContext context, MediaKind? mediaKind) async {
+  Future<void> _handleDeleteMediaItem(
+    BuildContext context,
+    MediaKind? mediaKind,
+  ) async {
     final item = _mediaItem!;
     final client = _getMediaClientForItem();
 
     // Shows and seasons are known-broad by definition; probing their parts
     // would be a per-episode fan-out to restate what the copy already says.
-    final probesImpact = mediaKind == MediaKind.episode || mediaKind == MediaKind.movie;
+    final probesImpact =
+        mediaKind == MediaKind.episode || mediaKind == MediaKind.movie;
     DeleteImpact? impact;
     if (probesImpact) {
       showLoadingDialog(context);
@@ -2055,9 +2611,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final confirmed = await showDeleteConfirmation(
       context,
       title: _deleteDialogTitle(mediaKind),
-      message: t.mediaMenu.confirmDeleteTarget(title: formatMediaTargetLabel(item)),
+      message: t.mediaMenu.confirmDeleteTarget(
+        title: formatMediaTargetLabel(item),
+      ),
       warning: _deleteWarning(item, mediaKind, impact),
-      confirmText: impact != null && impact.isUnverified ? t.mediaMenu.deleteAnyway : _deleteConfirmLabel(mediaKind),
+      confirmText: impact != null && impact.isUnverified
+          ? t.mediaMenu.deleteAnyway
+          : _deleteConfirmLabel(mediaKind),
     );
 
     if (!confirmed || !context.mounted) return;
@@ -2105,11 +2665,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// The danger block under the confirmation message, or null when the delete
   /// is verified to remove exactly the named item.
-  String? _deleteWarning(MediaItem item, MediaKind? kind, DeleteImpact? impact) {
+  String? _deleteWarning(
+    MediaItem item,
+    MediaKind? kind,
+    DeleteImpact? impact,
+  ) {
     if (kind == MediaKind.show || kind == MediaKind.season) {
       // leafCount is the episode total; a season falls back to its direct
       // children. Neither is guaranteed, so keep the countless sentence.
-      final episodes = item.leafCount ?? (kind == MediaKind.season ? item.childCount : null);
+      final episodes =
+          item.leafCount ?? (kind == MediaKind.season ? item.childCount : null);
       return episodes != null && episodes > 0
           ? t.mediaMenu.deleteEpisodeCountWarning(n: episodes)
           : t.mediaMenu.deleteMultipleWarning;
@@ -2119,7 +2684,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     if (impact.isUnverified) {
       return switch (impact.reason) {
-        DeleteImpactUnverifiedReason.noFileInfo => t.mediaMenu.deleteScopeUnverifiedNoFileInfo,
+        DeleteImpactUnverifiedReason.noFileInfo =>
+          t.mediaMenu.deleteScopeUnverifiedNoFileInfo,
         _ => t.mediaMenu.deleteScopeUnverifiedProbeFailed,
       };
     }
@@ -2127,10 +2693,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (!impact.isBroad) return null;
 
     final lines = <String>[];
-    if (impact.files.length > 1) lines.add(t.mediaMenu.deleteMultiPartWarning(n: impact.files.length));
+    if (impact.files.length > 1)
+      lines.add(t.mediaMenu.deleteMultiPartWarning(n: impact.files.length));
     if (impact.sharedWith.isNotEmpty) {
-      lines.add(t.mediaMenu.deleteSharedFileHeading(n: impact.sharedWith.length));
-      lines.addAll(impact.sharedWith.map((sibling) => '\u2022 ${formatMediaTargetLabel(sibling)}'));
+      lines.add(
+        t.mediaMenu.deleteSharedFileHeading(n: impact.sharedWith.length),
+      );
+      lines.addAll(
+        impact.sharedWith.map(
+          (sibling) => '\u2022 ${formatMediaTargetLabel(sibling)}',
+        ),
+      );
     }
     return lines.join('\n');
   }

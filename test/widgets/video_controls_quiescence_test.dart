@@ -56,7 +56,11 @@ void main() {
       chrome = PlayerChromeController();
       chromeDisposed = false;
       toast = PlayerToastController();
-      volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+      volume = VideoVolumeController(
+        player: player,
+        settings: settings,
+        initialVolume: 100,
+      );
       playbackState = PlaybackStateProvider();
       watchTogether = WatchTogetherProvider();
     });
@@ -78,11 +82,18 @@ void main() {
         MultiProvider(
           providers: [
             Provider<AppDatabase>.value(value: database),
-            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playbackState),
-            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+            ChangeNotifierProvider<PlaybackStateProvider>.value(
+              value: playbackState,
+            ),
+            ChangeNotifierProvider<WatchTogetherProvider>.value(
+              value: watchTogether,
+            ),
           ],
           child: MaterialApp(
-            theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
+            theme: ThemeData(
+              platform: TargetPlatform.android,
+              extensions: const [testMonoTokens],
+            ),
             home: Scaffold(
               body: OverlaySheetHost(
                 canPop: true,
@@ -111,30 +122,37 @@ void main() {
       expect(chrome.controlsVisible, isFalse);
     }
 
-    testWidgets('retiring controls with an open sheet cannot restart disposed chrome', (tester) async {
-      LinuxKeepAlive.debugIsLinuxOverride = false;
-      await pumpHiddenChrome(tester);
-      chrome.show();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(find.byTooltip(t.videoControls.settingsButton));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(find.byType(VideoSettingsSheet), findsOneWidget);
+    testWidgets(
+      'retiring controls with an open sheet cannot restart disposed chrome',
+      (tester) async {
+        LinuxKeepAlive.debugIsLinuxOverride = false;
+        await pumpHiddenChrome(tester);
+        chrome.show();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.tap(find.byTooltip(t.videoControls.settingsButton));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.byType(VideoSettingsSheet), findsOneWidget);
 
-      // The player route disposes its controller synchronously; the host then
-      // completes the outstanding sheet future after its children unmount.
-      chrome.dispose();
-      chromeDisposed = true;
-      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Text('Browse'))));
-      await tester.pump(const Duration(seconds: 6));
-      expect(find.byType(VideoSettingsSheet), findsNothing);
-      expect(find.text('Browse'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-      expect(tester.binding.hasScheduledFrame, isFalse);
-    });
+        // The player route disposes its controller synchronously; the host then
+        // completes the outstanding sheet future after its children unmount.
+        chrome.dispose();
+        chromeDisposed = true;
+        await tester.pumpWidget(
+          const MaterialApp(home: Scaffold(body: Text('Browse'))),
+        );
+        await tester.pump(const Duration(seconds: 6));
+        expect(find.byType(VideoSettingsSheet), findsNothing);
+        expect(find.text('Browse'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        expect(tester.binding.hasScheduledFrame, isFalse);
+      },
+    );
 
-    testWidgets('the player UI schedules no frames while chrome is hidden', (tester) async {
+    testWidgets('the player UI schedules no frames while chrome is hidden', (
+      tester,
+    ) async {
       LinuxKeepAlive.debugIsLinuxOverride = false;
       await pumpHiddenChrome(tester);
 
@@ -154,7 +172,9 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('Linux still repaints to keep its frame clock alive', (tester) async {
+    testWidgets('Linux still repaints to keep its frame clock alive', (
+      tester,
+    ) async {
       LinuxKeepAlive.debugIsLinuxOverride = true;
       await pumpHiddenChrome(tester);
 

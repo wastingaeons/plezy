@@ -59,16 +59,21 @@ enum RemoteCommandType {
   playMedia,
 }
 
-class _RemoteCommandTypeConverter extends IndexedEnumConverter<RemoteCommandType> {
-  const _RemoteCommandTypeConverter() : super(RemoteCommandType.values, RemoteCommandType.ping);
+class _RemoteCommandTypeConverter
+    extends IndexedEnumConverter<RemoteCommandType> {
+  const _RemoteCommandTypeConverter()
+    : super(RemoteCommandType.values, RemoteCommandType.ping);
 }
 
 @freezed
 sealed class RemoteCommand with _$RemoteCommand {
   const factory RemoteCommand({
-    @JsonKey(name: 't') @_RemoteCommandTypeConverter() required RemoteCommandType type,
+    @JsonKey(name: 't')
+    @_RemoteCommandTypeConverter()
+    required RemoteCommandType type,
     @JsonKey(name: 'd') Map<String, dynamic>? data,
   }) = _RemoteCommand;
 
-  factory RemoteCommand.fromJson(Map<String, dynamic> json) => _$RemoteCommandFromJson(json);
+  factory RemoteCommand.fromJson(Map<String, dynamic> json) =>
+      _$RemoteCommandFromJson(json);
 }

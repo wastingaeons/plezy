@@ -12,7 +12,10 @@ import '../../media/media_server_client.dart';
 /// resolve at the show level, so a season behaves like the show's own Play
 /// button. Returns `null` when the item can't be found or isn't a supported
 /// kind.
-Future<MediaItem?> resolveCompanionRemotePlaybackTarget(MediaServerClient client, String ratingKey) async {
+Future<MediaItem?> resolveCompanionRemotePlaybackTarget(
+  MediaServerClient client,
+  String ratingKey,
+) async {
   final withOnDeck = await client.fetchItemWithOnDeck(ratingKey);
   final fetched = withOnDeck.item;
   if (fetched == null) return null;
@@ -22,7 +25,8 @@ Future<MediaItem?> resolveCompanionRemotePlaybackTarget(MediaServerClient client
     case MediaKind.episode:
       return fetched;
     case MediaKind.show:
-      return withOnDeck.onDeckEpisode ?? await _firstEpisodeOfDefaultSeason(client, fetched);
+      return withOnDeck.onDeckEpisode ??
+          await _firstEpisodeOfDefaultSeason(client, fetched);
     case MediaKind.season:
       final seriesId = fetched.grandparentId ?? fetched.parentId;
       if (seriesId == null) return null;
@@ -32,7 +36,10 @@ Future<MediaItem?> resolveCompanionRemotePlaybackTarget(MediaServerClient client
   }
 }
 
-Future<MediaItem?> _firstEpisodeOfDefaultSeason(MediaServerClient client, MediaItem show) async {
+Future<MediaItem?> _firstEpisodeOfDefaultSeason(
+  MediaServerClient client,
+  MediaItem show,
+) async {
   final season = defaultPlaybackSeason(await client.fetchChildren(show.id));
   if (season == null) return null;
   return fetchFirstEpisodeForSeason(client, season.id, seriesId: show.id);
