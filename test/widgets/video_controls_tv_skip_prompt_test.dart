@@ -10,7 +10,7 @@ void main() {
         hasPlayNextPrompt: false,
         skipButtonDismissed: false,
         controlsVisible: false,
-        tvPersistent: true,
+        persistUntilMarkerEnds: true,
       ),
       isTrue,
     );
@@ -24,7 +24,7 @@ void main() {
         hasPlayNextPrompt: false,
         skipButtonDismissed: true,
         controlsVisible: true,
-        tvPersistent: true,
+        persistUntilMarkerEnds: true,
       ),
       isFalse,
     );
@@ -41,7 +41,7 @@ void main() {
             hasPlayNextPrompt: false,
             skipButtonDismissed: false,
             controlsVisible: false,
-            tvPersistent: true,
+            persistUntilMarkerEnds: true,
           ),
           isFalse,
         );
@@ -57,13 +57,38 @@ void main() {
         hasPlayNextPrompt: true,
         skipButtonDismissed: false,
         controlsVisible: false,
-        tvPersistent: true,
+        persistUntilMarkerEnds: true,
       ),
       isFalse,
     );
   });
 
-  test('non-TV retains original seven-second dismissal behavior', () {
+  test('mobile keeps full-sized skip prompt available while controls are hidden', () {
+    expect(
+      shouldShowSkipMarkerButton(
+        hasFirstFrame: true,
+        hasMarker: true,
+        hasPlayNextPrompt: false,
+        skipButtonDismissed: false,
+        controlsVisible: false,
+        persistUntilMarkerEnds: true,
+      ),
+      isTrue,
+    );
+    expect(
+      shouldShowSkipMarkerButton(
+        hasFirstFrame: true,
+        hasMarker: true,
+        hasPlayNextPrompt: false,
+        skipButtonDismissed: true,
+        controlsVisible: true,
+        persistUntilMarkerEnds: true,
+      ),
+      isFalse,
+    );
+  });
+
+  test('desktop retains original seven-second dismissal behavior', () {
     expect(
       shouldShowSkipMarkerButton(
         hasFirstFrame: true,
