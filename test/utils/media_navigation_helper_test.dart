@@ -61,16 +61,40 @@ void main() {
   });
 
   group('paired-device tap interception', () {
-    test('offers a playback location only for connected remote playback', () {
-      expect(
-        shouldOfferConnectedPlayback(
-          isOffline: false,
-          isRemote: true,
-          isConnected: true,
-          serverId: 'server-1',
-        ),
-        isTrue,
-      );
+    test('offers casting on movie, episode, show and season cards', () {
+      for (final kind in [
+        MediaKind.movie,
+        MediaKind.episode,
+        MediaKind.show,
+        MediaKind.season,
+      ]) {
+        expect(
+          shouldOfferConnectedPlayback(
+            isOffline: false,
+            isRemote: true,
+            isConnected: true,
+            serverId: 'server-1',
+            kind: kind,
+          ),
+          isTrue,
+          reason: '$kind should offer remote playback on a normal tap',
+        );
+      }
+    });
+
+    test('does not offer the video-only remote command for music or clips', () {
+      for (final kind in [MediaKind.track, MediaKind.album, MediaKind.clip]) {
+        expect(
+          shouldOfferConnectedPlayback(
+            isOffline: false,
+            isRemote: true,
+            isConnected: true,
+            serverId: 'server-1',
+            kind: kind,
+          ),
+          isFalse,
+        );
+      }
     });
 
     test('never interrupts unpaired, offline or serverless activation', () {
