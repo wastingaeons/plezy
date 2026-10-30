@@ -188,6 +188,7 @@ bool _isViewerInput(RemoteCommandType type) => switch (type) {
   RemoteCommandType.pause ||
   RemoteCommandType.playPause ||
   RemoteCommandType.stop ||
+  RemoteCommandType.playMedia ||
   RemoteCommandType.seekForward ||
   RemoteCommandType.seekBackward ||
   RemoteCommandType.nextTrack ||
