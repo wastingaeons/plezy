@@ -59,6 +59,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool _isPlayerActive = false;
   bool _isPlayerPlaying = false;
   String? _remoteSkipMarker;
+  String? _remoteMediaTitle;
+  String? _remoteMediaSubtitle;
   int _remotePositionMs = 0;
   int _remoteDurationMs = 0;
   // Whether this device's own video player is up, as last advertised to a
@@ -66,6 +68,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool _hostPlayerActive = false;
   bool _hostPlayerPlaying = false;
   String? _hostSkipMarker;
+  String? _hostMediaTitle;
+  String? _hostMediaSubtitle;
   int _hostPositionMs = 0;
   int _hostDurationMs = 0;
   DateTime? _lastTimelinePublishedAt;
@@ -137,6 +141,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool get isPlayerActive => _isPlayerActive;
   bool get isPlayerPlaying => _isPlayerPlaying;
   String? get remoteSkipMarker => _remoteSkipMarker;
+  String? get remoteMediaTitle => _remoteMediaTitle;
+  String? get remoteMediaSubtitle => _remoteMediaSubtitle;
   Duration get remotePosition => Duration(milliseconds: _remotePositionMs);
   Duration get remoteDuration => Duration(milliseconds: _remoteDurationMs);
   bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
@@ -988,6 +994,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     final playing = active && (command.data?['playerPlaying'] as bool? ?? true);
     final marker = active ? (command.data?['skipMarker'] as String?) : null;
     final skipMarker = marker == 'intro' || marker == 'credits' ? marker : null;
+    final title = active ? (command.data?['mediaTitle'] as String?) : null;
+    final subtitle = active ? (command.data?['mediaSubtitle'] as String?) : null;
     final rawPosition = command.data?['positionMs'];
     final rawDuration = command.data?['durationMs'];
     final positionMs = active && rawPosition is int && rawPosition >= 0 ? rawPosition : 0;
@@ -996,6 +1004,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (_isPlayerActive == active &&
         _isPlayerPlaying == playing &&
         _remoteSkipMarker == skipMarker &&
+        _remoteMediaTitle == title &&
+        _remoteMediaSubtitle == subtitle &&
         _remotePositionMs == clampedPosition &&
         _remoteDurationMs == durationMs) {
       return;
@@ -1003,6 +1013,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _isPlayerActive = active;
     _isPlayerPlaying = playing;
     _remoteSkipMarker = skipMarker;
+    _remoteMediaTitle = title;
+    _remoteMediaSubtitle = subtitle;
     _remotePositionMs = clampedPosition;
     _remoteDurationMs = durationMs;
     safeNotifyListeners();
@@ -1028,6 +1040,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     'playerPlaying': _hostPlayerActive && _hostPlayerPlaying,
     'positionMs': _hostPlayerActive ? _hostPositionMs : 0,
     'durationMs': _hostPlayerActive ? _hostDurationMs : 0,
+    if (_hostPlayerActive && _hostMediaTitle != null) 'mediaTitle': _hostMediaTitle,
+    if (_hostPlayerActive && _hostMediaSubtitle != null) 'mediaSubtitle': _hostMediaSubtitle,
     if (_hostPlayerActive && _hostSkipMarker != null)
       'skipMarker': _hostSkipMarker,
   };
@@ -1042,11 +1056,30 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (!active) {
       _hostPlayerPlaying = false;
       _hostSkipMarker = null;
+      _hostMediaTitle = null;
+      _hostMediaSubtitle = null;
       _hostPositionMs = 0;
       _hostDurationMs = 0;
       _lastTimelinePublishedAt = null;
       _lastPublishedPositionMs = 0;
     }
+    _publishHostPlaybackState();
+  }
+
+  /// Playback metadata for the phone's in-app mini-player. The host is the
+  /// source of truth; no server credentials or artwork URLs cross the wire.
+  void setHostNowPlaying(String? title, {String? subtitle}) {
+    final normalizedTitle = title?.trim();
+    final normalizedSubtitle = subtitle?.trim();
+    final safeTitle = normalizedTitle == null || normalizedTitle.isEmpty
+        ? null
+        : normalizedTitle.substring(0, normalizedTitle.length > 256 ? 256 : normalizedTitle.length);
+    final safeSubtitle = normalizedSubtitle == null || normalizedSubtitle.isEmpty
+        ? null
+        : normalizedSubtitle.substring(0, normalizedSubtitle.length > 256 ? 256 : normalizedSubtitle.length);
+    if (_hostMediaTitle == safeTitle && _hostMediaSubtitle == safeSubtitle) return;
+    _hostMediaTitle = safeTitle;
+    _hostMediaSubtitle = safeSubtitle;
     _publishHostPlaybackState();
   }
 

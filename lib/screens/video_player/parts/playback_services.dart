@@ -460,6 +460,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// poster synchronously inside `setMetadata` (~270 ms); the controls
   /// populate a beat after first frame which is fine.
   void _publishMediaControlsMetadata(MediaItem metadata, MediaServerClient? mediaClient) {
+    _companionRemote.setNowPlaying(metadata.displayTitle, subtitle: metadata.displaySubtitle);
     final mediaControlsManager = _mediaControlsManager;
     if (mediaControlsManager == null) return;
     unawaited(
