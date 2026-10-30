@@ -36,6 +36,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     final hasMarkerState =
         _currentMarker != null ||
         _skipButtonDismissed ||
+        _skipButtonCompact ||
         _autoSkipTimer != null ||
         _autoSkipActive.value ||
         _autoSkipProgress.value != 0.0 ||
@@ -46,6 +47,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       _setControlsState(() {
         _currentMarker = null;
         _skipButtonDismissed = false;
+        _skipButtonCompact = false;
       });
     }
     _releaseSkipMarkerFocusToSurface();
@@ -78,12 +80,13 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _setControlsState(() {
       _currentMarker = foundMarker;
       _skipButtonDismissed = false;
+      _skipButtonCompact = false;
     });
 
     _startAutoSkipTimer(foundMarker);
 
-    // Auto-skip OFF: dismiss button after 7s if no interaction
-    // Auto-skip ON: button stays until controls hide
+    // Auto-skip OFF: on TV become compact after 12s; other platforms
+    // retain their 7s dismissal. Auto-skip ON follows its countdown.
     if (!_shouldAutoSkipForMarker(foundMarker)) {
       _startSkipButtonDismissTimer();
     }
@@ -128,6 +131,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     if (!mounted) return;
     _setControlsState(() {
       _currentMarker = null;
+      _skipButtonCompact = false;
     });
     // The play-next flow requests its own focus; claiming the surface here
     // would race it.
@@ -188,18 +192,20 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     return true;
   }
 
-  /// Starts/restarts the skip button dismiss timer. When it fires, hides the
-  /// button and cancels any active auto-skip countdown.
+  /// On TV, shrink the skip control after 12 seconds without dismissing it
+  /// or surrendering its D-pad focus. Other platforms keep the 7s timeout.
   void _startSkipButtonDismissTimer() {
     _skipButtonDismissTimer?.cancel();
     if (!_hasRenderedFirstFrame) return;
-    _skipButtonDismissTimer = Timer(const Duration(seconds: 7), () {
-      if (!mounted || _currentMarker == null) return;
-      _setControlsState(() {
-        _skipButtonDismissed = true;
-      });
-      // The dismissed flag only hides the button while the chrome is down;
-      // with the chrome up the button stays visible and keeps its focus.
+    final compactOnTv = PlatformDetector.isTV();
+    _skipButtonDismissTimer = Timer(Duration(seconds: compactOnTv ? 12 : 7), () {
+      if (!mounted || _currentMarker == null || _skipButtonDismissed) return;
+      if (compactOnTv) {
+        _setControlsState(() => _skipButtonCompact = true);
+        return;
+      }
+      _setControlsState(() => _skipButtonDismissed = true);
+      // Elsewhere, a timed-out prompt returns control to the video surface.
       if (!_showControls) _releaseSkipMarkerFocusToSurface();
       _cancelAutoSkipTimer();
     });
@@ -230,6 +236,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     hasPlayNextPrompt: widget.playNextFocusNode != null,
     skipButtonDismissed: _skipButtonDismissed,
     controlsVisible: _showControls,
+    tvPersistent: PlatformDetector.isTV(),
   );
 
   void _activateSkipMarker() {
@@ -276,8 +283,17 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
               autoSkipDelay: _autoSkipDelay,
               autoSkipProgress: autoSkipProgress,
               focusNode: _skipMarkerFocusNode,
+              compact: PlatformDetector.isTV() && _skipButtonCompact,
               onActivate: _activateSkipMarker,
-              onFocusDown: () => _desktopControlsKey.currentState?.requestPlayPauseFocus(),
+              onFocusDown: () {
+                // A compact button remains focused while the OSD is hidden.
+                // Down should reveal the controls instead of trapping the remote.
+                if (!_showControls) {
+                  _showControlsWithFocus();
+                } else {
+                  _desktopControlsKey.currentState?.requestPlayPauseFocus();
+                }
+              },
             );
           },
         );
