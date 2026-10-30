@@ -1019,6 +1019,7 @@ class _MediaCardList extends StatelessWidget {
     return CardFocusBorder(
       borderRadius: tokens(context).radiusSm,
       strokeAlign: BorderSide.strokeAlignInside,
+      focusColor: FocusTheme.mediaFocusColor,
       child: _CardTapRegion(
         onTap: onTap,
         onTapDown: onTapDown,
@@ -1764,7 +1765,11 @@ class _CatalogFocusBorder extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = accentColor;
     if (color == null)
-      return CardFocusBorder(borderRadius: borderRadius, child: child);
+      return CardFocusBorder(
+        borderRadius: borderRadius,
+        focusColor: FocusTheme.mediaFocusColor,
+        child: child,
+      );
     final showFocus = CardFocusScope.maybeOf(context);
     if (showFocus == null) return child;
     return AnimatedContainer(
@@ -1775,7 +1780,7 @@ class _CatalogFocusBorder extends StatelessWidget {
         isFocused: showFocus,
         borderRadius: borderRadius,
         borderStrokeAlign: BorderSide.strokeAlignOutside,
-        color: color,
+        color: FocusTheme.mediaFocusColor,
       ),
       child: child,
     );
