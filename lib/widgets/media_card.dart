@@ -35,6 +35,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
 import '../utils/media_navigation_helper.dart';
+import '../utils/video_player_navigation.dart';
 import '../utils/snackbar_helper.dart';
 import '../theme/mono_tokens.dart';
 import '../i18n/strings.g.dart';
@@ -482,7 +483,19 @@ class MediaCardState extends State<MediaCard>
           );
           return;
         }
+        if (target == CompanionPlaybackTarget.local) {
+          // This is an explicit playback choice, even if the card normally
+          // overrides taps to browse a different screen.
+          final refreshed = await navigateToVideoPlayer(
+            context,
+            metadata: item,
+            isOffline: widget.isOffline,
+          );
+          if (refreshed == true && context.mounted) widget.onRefresh?.call(item);
+          return;
+        }
       }
+      // No chooser was shown; preserve specialized card taps as they were.
       onTap();
       return;
     }
