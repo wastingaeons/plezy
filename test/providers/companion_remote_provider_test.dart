@@ -142,14 +142,47 @@ void main() {
       host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
 
       expect(host.sentCommands.single.type, RemoteCommandType.syncState);
-      expect(host.sentCommands.single.data, {'playerActive': true});
+      expect(host.sentCommands.single.data, {'playerActive': true, 'playerPlaying': false});
 
       harness.provider.setHostPlayerActive(false);
       host.sentCommands.clear();
       host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
-      expect(host.sentCommands.single.data, {'playerActive': false});
+      expect(host.sentCommands.single.data, {'playerActive': false, 'playerPlaying': false});
     });
   });
+
+
+    test('host publishes playing and marker changes, then clears both on exit', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+      await harness.provider.startHostServer();
+      host.emitDeviceConnected(
+        RemoteDevice(id: 'phone', name: 'Phone', platform: 'android', connectedAt: DateTime(2026)),
+      );
+      host.sentCommands.clear();
+
+      harness.provider.setHostPlayerActive(true);
+      harness.provider.setHostPlayerPlaying(true);
+      harness.provider.setHostSkipMarker('intro');
+      expect(host.sentCommands.last.data, {
+        'playerActive': true,
+        'playerPlaying': true,
+        'skipMarker': 'intro',
+      });
+
+      harness.provider.setHostSkipMarker('credits');
+      expect(host.sentCommands.last.data?['skipMarker'], 'credits');
+      final count = host.sentCommands.length;
+      harness.provider.setHostSkipMarker('credits');
+      expect(host.sentCommands.length, count);
+
+      harness.provider.setHostPlayerActive(false);
+      expect(host.sentCommands.last.data, {'playerActive': false, 'playerPlaying': false});
+    });
 
   group('CompanionRemoteProvider — dispose hygiene', () {
     test('cancelReconnect on a fresh provider does not throw', () {
