@@ -18,7 +18,6 @@ import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
-import '../screens/companion_remote/mobile_remote_screen.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
 import '../metadata_edit/metadata_edit_models.dart';
 import '../services/plex_client.dart';
@@ -454,7 +453,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Ask the paired Plezy host to play this item, then display its remote UI.
+  /// Ask the paired host to play the item, then open its detail page locally.
+  /// Episode routing focuses the exact episode within the series detail page.
   /// All playback resolution occurs on the host using its own media server.
   Future<void> _handlePlayOnConnectedDevice(
     BuildContext context,
@@ -476,9 +476,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (!context.mounted) return;
     final deviceName = remote.connectedDevice?.name ?? 'connected device';
     showAppSnackBar(context, 'Sent to $deviceName');
-    await Navigator.push(
+    await navigateToMediaItemDetails(
       context,
-      MaterialPageRoute(builder: (_) => const MobileRemoteScreen()),
+      item,
+      onRefresh: _notifyRefresh,
     );
   }
 
