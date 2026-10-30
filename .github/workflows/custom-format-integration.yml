@@ -34,6 +34,7 @@ jobs:
             lib/focus/card_focus_scope.dart \
             lib/widgets/media_context_menu.dart \
             lib/widgets/media_card.dart \
+            lib/screens/media_detail_screen.dart \
             lib/utils/media_navigation_helper.dart \
             test/utils/media_navigation_helper_test.dart \
             test/widgets/video_controls/buffer_range_focus_test.dart
@@ -50,6 +51,7 @@ jobs:
             lib/focus/card_focus_scope.dart \
             lib/widgets/media_context_menu.dart \
             lib/widgets/media_card.dart \
+            lib/screens/media_detail_screen.dart \
             lib/utils/media_navigation_helper.dart \
             test/utils/media_navigation_helper_test.dart \
             test/widgets/video_controls/buffer_range_focus_test.dart
