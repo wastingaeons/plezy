@@ -74,6 +74,7 @@ void main() {
       expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.details), isFalse);
       expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.local), isFalse);
       expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.cancelled), isFalse);
+      expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.original), isFalse);
       expect(shouldSendCompanionPlayCommand(CompanionPlaybackTarget.connected), isTrue);
     });
 
