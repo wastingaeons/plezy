@@ -67,7 +67,7 @@ const double playerFocusKnobRadius = 9;
 
 /// Paints the focused-timeline knob: a white disc with the same shadow as
 /// [PlayerFocusDisc], shared by the VOD slider thumb and the live-TV painter.
-void paintPlayerFocusKnob(Canvas canvas, Offset center) {
+void paintPlayerFocusKnob(Canvas canvas, Offset center, {Color fillColor = Colors.white}) {
   canvas.drawCircle(
     center + playerFocusShadow.offset / 2,
     playerFocusKnobRadius,
@@ -75,5 +75,5 @@ void paintPlayerFocusKnob(Canvas canvas, Offset center) {
       ..color = playerFocusShadow.color
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, playerFocusShadow.blurSigma),
   );
-  canvas.drawCircle(center, playerFocusKnobRadius, Paint()..color = Colors.white);
+  canvas.drawCircle(center, playerFocusKnobRadius, Paint()..color = fillColor);
 }
