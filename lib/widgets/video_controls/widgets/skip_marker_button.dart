@@ -75,7 +75,7 @@ class SkipMarkerButton extends StatelessWidget {
       focusNode: focusNode,
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
-      // Draw our orange focus treatment on the button rather than an outer white stroke.
+      // Keep the white button; render only a vivid cyan focus border on top.
       delegateFocusBorder: true,
       autoScroll: false,
       onKeyEvent: (node, event) {
@@ -107,9 +107,7 @@ class SkipMarkerButton extends StatelessWidget {
                       vertical: compact ? 7 : 12,
                     ),
                     decoration: BoxDecoration(
-                      color: focused
-                          ? const Color(0xFFFF7E57)
-                          : Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(
                         tokens(context).radiusSm,
                       ),
@@ -176,7 +174,7 @@ class SkipMarkerButton extends StatelessWidget {
                     ),
                   ),
                 ),
-              // Dark burnt-orange edge remains visible over auto-skip progress.
+              // Cool cyan outlines the white button without tinting its contents.
               Positioned.fill(
                 child: IgnorePointer(
                   child: AnimatedBuilder(
@@ -193,9 +191,9 @@ class SkipMarkerButton extends StatelessWidget {
                           ),
                           border: Border.all(
                             color: showFocus
-                                ? const Color(0xFF9C3514)
+                                ? const Color(0xFF38BDF8)
                                 : Colors.transparent,
-                            width: 2,
+                            width: 3,
                           ),
                         ),
                       );
