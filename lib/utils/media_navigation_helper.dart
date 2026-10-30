@@ -152,7 +152,7 @@ bool shouldOfferConnectedPlayback({
     (kind == MediaKind.movie || kind == MediaKind.episode);
 
 /// A cancelled dialog must never accidentally launch a local player.
-enum CompanionPlaybackTarget { local, connected, cancelled }
+enum CompanionPlaybackTarget { local, connected, details, cancelled }
 
 Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
   BuildContext context,
@@ -173,9 +173,14 @@ Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
   final choice = await showDialog<CompanionPlaybackTarget>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Where would you like to play?'),
+      title: const Text('What would you like to do?'),
       content: Text(item.displayTitle),
       actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.of(dialogContext).pop(CompanionPlaybackTarget.details),
+          child: const Text('View Details'),
+        ),
         TextButton(
           onPressed: () =>
               Navigator.of(dialogContext).pop(CompanionPlaybackTarget.local),
@@ -313,7 +318,8 @@ Future<MediaNavigationResult> navigateToMediaItem(
   if (target == CompanionPlaybackTarget.cancelled || !context.mounted) {
     return MediaNavigationResult.navigated;
   }
-  if (target == CompanionPlaybackTarget.connected) {
+  if (target == CompanionPlaybackTarget.connected ||
+      target == CompanionPlaybackTarget.details) {
     return navigateToMediaItemDetails(
       context,
       mi,
