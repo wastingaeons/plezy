@@ -154,6 +154,11 @@ bool shouldOfferConnectedPlayback({
 /// A cancelled dialog must never accidentally launch a local player.
 enum CompanionPlaybackTarget { local, connected, details, cancelled }
 
+/// Only an explicit request to play on the paired host may send playMedia.
+/// Browsing a title or playing locally must never send a remote command.
+bool shouldSendCompanionPlayCommand(CompanionPlaybackTarget target) =>
+    target == CompanionPlaybackTarget.connected;
+
 Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
   BuildContext context,
   MediaItem item, {
@@ -199,7 +204,7 @@ Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
 
   if (!context.mounted || choice == null)
     return CompanionPlaybackTarget.cancelled;
-  if (choice == CompanionPlaybackTarget.connected) {
+  if (shouldSendCompanionPlayCommand(choice)) {
     // The pairing may have disappeared while the chooser was open.
     if (remote == null || !remote.isRemote || !remote.isConnected) {
       return CompanionPlaybackTarget.cancelled;
