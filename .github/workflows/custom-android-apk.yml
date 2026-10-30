@@ -1,0 +1,154 @@
+# Fork-only Android APK builds. Publish raw APK files for Obtainium.
+name: Custom Android APKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish raw APKs to GitHub Releases for Obtainium (main branch only)"
+        type: boolean
+        default: false
+      release_tag:
+        description: "Release tag, e.g. custom-v1.0.0 (required when publishing)"
+        type: string
+        default: ""
+  push:
+    tags:
+      - "custom-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: custom-android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Signed Android APKs (ARMv7 / ARM64 / x86_64)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Only needed to create the opt-in GitHub Release.
+    env:
+      FLUTTER_VERSION: "3.47.1"
+      # Install beside official Plezy without sharing its app data or signing ID.
+      PLEZY_CUSTOM_APPLICATION_ID: "com.wastingaeons.plezy"
+
+    steps:
+      - name: Validate release source and tag
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUBLISH_RELEASE: ${{ inputs.publish_release }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$PUBLISH_RELEASE" == "true" ]]; then
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "Publish a release from main only." >&2
+              exit 1
+            fi
+            if [[ ! "$RELEASE_TAG" =~ ^custom-v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+              echo "Choose a release tag like custom-v1.0.0." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Java
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Set up persistent Android release signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          for value in "$KEYSTORE_BASE64" "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS"; do
+            if [[ -z "$value" ]]; then
+              echo "Missing Android signing secrets. See docs/CUSTOM_ANDROID_BUILDS.md." >&2
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          {
+            printf 'storePassword=%s\n' "$STORE_PASSWORD"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'storeFile=upload-keystore.jks\n'
+          } > android/key.properties
+          keytool -list -keystore android/app/upload-keystore.jks -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+
+      - name: Build split release APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A monotonically increasing Android versionCode allows Obtainium
+          # to install future releases without uninstalling existing data.
+          build_number=$((100000 + GITHUB_RUN_NUMBER))
+          flutter build apk --release --split-per-abi \
+            --build-number="$build_number" \
+            --dart-define=ENABLE_UPDATE_CHECK=false \
+            --dart-define=ENABLE_SENTRY=false \
+            --dart-define=GIT_COMMIT="$GITHUB_SHA"
+
+      - name: Stage raw APK assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-apks
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk release-apks/plezy-custom-armeabi-v7a.apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk release-apks/plezy-custom-arm64-v8a.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk release-apks/plezy-custom-x86_64.apk
+          for apk in release-apks/*.apk; do
+            test -s "$apk"
+            echo "$(basename "$apk"): $(du -h "$apk" | cut -f1)"
+          done
+
+      - name: Upload APKs as workflow artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: plezy-custom-android-apks
+          path: release-apks/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release for Obtainium
+        if: ${{ startsWith(github.ref, 'refs/tags/custom-v') || inputs.publish_release == true }}
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          name: Plezy Custom ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          body: |
+            Custom Plezy Android build with split-ABI APKs.
+            **Chromecast / 32-bit ARM:** download `plezy-custom-armeabi-v7a.apk`.
+            Built and signed by this repository's GitHub Actions workflow.
+          files: release-apks/*.apk
+          fail_on_unmatched_files: true
+          prerelease: false
+
+      - name: Remove signing files from runner
+        if: always()
+        shell: bash
+        run: rm -f android/app/upload-keystore.jks android/key.properties
