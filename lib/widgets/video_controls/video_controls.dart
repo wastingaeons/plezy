@@ -27,6 +27,8 @@ import 'package:flutter/services.dart'
         HardwareKeyboard;
 
 import '../../services/fullscreen_state_manager.dart';
+import '../../models/companion_remote/remote_command.dart';
+import '../../services/companion_remote/companion_remote_receiver.dart';
 import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
 import '../../services/playback_initialization_types.dart';
@@ -655,6 +657,8 @@ class PlexVideoControls extends StatefulWidget {
   final VideoVolumeController volumeController;
   final MediaItem metadata;
   final VoidCallback? onNext;
+  /// Emits an intro/credits marker only while the real skip action is available.
+  final ValueChanged<String?>? onRemoteSkipMarkerChanged;
   final VoidCallback? onPrevious;
   final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
@@ -797,6 +801,7 @@ class PlexVideoControls extends StatefulWidget {
     this.initialChapters,
     this.initialMarkers,
     this.onNext,
+    this.onRemoteSkipMarkerChanged,
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
@@ -953,6 +958,27 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _hiddenSeekRepeatCount = 0;
   // Current marker state
   MediaMarker? _currentMarker;
+  String? _lastRemoteSkipMarker;
+  late final void Function(RemoteCommandType) _remoteSkipHandler = _handleRemoteSkipCommand;
+
+  void _handleRemoteSkipCommand(RemoteCommandType type) {
+    final marker = _currentMarker;
+    if (!mounted || marker == null || !widget.canControl || !_isSkipMarkerButtonVisible) return;
+    if (marker.isCredits && type != RemoteCommandType.skipCredits) return;
+    if (!marker.isCredits && type != RemoteCommandType.skipIntro) return;
+    _activateSkipMarker();
+  }
+
+  void _reportRemoteSkipMarker() {
+    final marker = _isSkipMarkerButtonVisible ? _currentMarker : null;
+    final value = marker == null ? null : (marker.isCredits ? 'credits' : 'intro');
+    if (_lastRemoteSkipMarker == value) return;
+    _lastRemoteSkipMarker = value;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onRemoteSkipMarkerChanged?.call(_lastRemoteSkipMarker);
+    });
+  }
+
 
   /// Latched for the whole Back press; see [_handleLocalPlayerNavigationKeyEvent].
   bool _skipMarkerOwnsBackPress = false;
@@ -1016,6 +1042,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void initState() {
     super.initState();
+    CompanionRemoteReceiver.instance.onSkipMarker = _remoteSkipHandler;
     _lastControlsVisible = widget.chromeController.controlsVisible;
     _controlsMounted = _lastControlsVisible;
     _controlsOpaque = _lastControlsVisible;
@@ -1219,6 +1246,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   @override
   void dispose() {
+    final receiver = CompanionRemoteReceiver.instance;
+    if (identical(receiver.onSkipMarker, _remoteSkipHandler)) receiver.onSkipMarker = null;
+    widget.onRemoteSkipMarkerChanged?.call(null);
     ++_subtitleVisibilityWriteGeneration;
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();

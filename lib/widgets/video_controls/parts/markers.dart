@@ -53,6 +53,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _releaseSkipMarkerFocusToSurface();
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
+    _reportRemoteSkipMarker();
   }
 
   /// Hands the remote back to the player surface when the skip button is
@@ -84,6 +85,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     });
 
     _startAutoSkipTimer(foundMarker);
+    _reportRemoteSkipMarker();
 
     // Auto-skip OFF: on TV become compact after 12s; other platforms
     // retain their 7s dismissal. Auto-skip ON follows its countdown.
@@ -140,6 +142,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     if (!handsOffToCompletion) _releaseSkipMarkerFocusToSurface();
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
+    _reportRemoteSkipMarker();
   }
 
   void _startAutoSkipTimer(MediaMarker marker) {
@@ -274,6 +277,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       _skipButtonDismissed = true;
     });
     if (!_showControls) _releaseSkipMarkerFocusToSurface();
+    _reportRemoteSkipMarker();
   }
 
   Widget _buildSkipMarkerButton() {
