@@ -1,0 +1,33 @@
+# Temporary, developer-branch-only action to apply exact pinned Dart formatting.
+name: Format integrated skip control
+on:
+  push:
+    branches:
+      - integration/custom-v1-android
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.repository == 'wastingaeons/plezy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install Flutter 3.47.1
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.47.1'
+      - name: Format integrated skip UI
+        run: dart format lib/widgets/video_controls/widgets/skip_marker_button.dart lib/widgets/video_controls/widgets/timeline_slider.dart
+      - name: Save formatting commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- lib/widgets/video_controls/widgets/skip_marker_button.dart lib/widgets/video_controls/widgets/timeline_slider.dart
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style: dart format integrated TV controls"
+            git push origin HEAD:integration/custom-v1-android
+          fi
