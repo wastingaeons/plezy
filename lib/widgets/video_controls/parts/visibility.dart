@@ -265,7 +265,15 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
     if (visibilityChanged && !controlsVisible) {
       _desktopControlsKey.currentState?.hideContentStrip();
-      _cancelSkipButtonDismissTimer();
+      final isTv = PlatformDetector.isTV();
+      // On TV the timer only compacts the prompt. Do not cancel it when the
+      // OSD hides; otherwise a new marker could never reach its compact state.
+      if (!isTv) _cancelSkipButtonDismissTimer();
+      // Preserve one-click Select on a focused skip prompt while the normal
+      // player controls fade away. If focus moved to a different control,
+      // return it to the player surface as before; don't steal it back.
+      final keepSkipFocus =
+          isTv && _currentMarker != null && !_skipButtonDismissed && _skipMarkerFocusNode.hasPrimaryFocus;
       // When the chrome never reached full opacity, hide() already retired the
       // presented flag — no fade-out will run, so AnimatedOpacity.onEnd never
       // fires. Drop the subtree here instead of waiting for it.
@@ -273,9 +281,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       _setControlsState(() {
         _controlsOpaque = false;
         if (controlsDismissed) _controlsMounted = false;
-        if (_currentMarker != null) _skipButtonDismissed = true;
+        if (!isTv && _currentMarker != null) _skipButtonDismissed = true;
       });
-      _claimPlayerSurfaceFocus();
+      if (!keepSkipFocus) _claimPlayerSurfaceFocus();
     } else if (visibilityChanged) {
       // The timeline is about to take over held-key seeking; commit whatever
       // the hidden-chrome burst accumulated so it can't rebase from a stale
