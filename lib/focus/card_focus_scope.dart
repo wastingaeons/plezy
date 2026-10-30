@@ -40,6 +40,7 @@ class CardFocusBorder extends StatelessWidget {
     this.borderRadius = FocusTheme.defaultBorderRadius,
     this.borderRadii,
     this.strokeAlign = BorderSide.strokeAlignOutside,
+    this.focusColor,
     required this.child,
   });
 
@@ -49,6 +50,9 @@ class CardFocusBorder extends StatelessWidget {
   final BorderRadius? borderRadii;
 
   final double strokeAlign;
+
+  /// Optional color for an individually styled media-card focus border.
+  final Color? focusColor;
   final Widget child;
 
   @override
@@ -65,6 +69,7 @@ class CardFocusBorder extends StatelessWidget {
         borderRadius: borderRadius,
         radii: borderRadii,
         borderStrokeAlign: strokeAlign,
+        color: focusColor,
       ),
       child: child,
     );
