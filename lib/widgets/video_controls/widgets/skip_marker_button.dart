@@ -75,8 +75,8 @@ class SkipMarkerButton extends StatelessWidget {
       focusNode: focusNode,
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
-      // Explicit accent outline is painted on top of the skip countdown.
-      focusColor: Colors.transparent,
+      // Draw our orange focus treatment on the button rather than an outer white stroke.
+      delegateFocusBorder: true,
       autoScroll: false,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent &&
@@ -93,7 +93,13 @@ class SkipMarkerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Stack(
             children: [
-              AnimatedContainer(
+              AnimatedBuilder(
+                animation: focusNode,
+                builder: (context, _) {
+                  final focused =
+                      focusNode.hasFocus &&
+                      InputModeTracker.isKeyboardMode(context);
+                  return AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
                 padding: EdgeInsets.symmetric(
@@ -101,7 +107,7 @@ class SkipMarkerButton extends StatelessWidget {
                   vertical: compact ? 7 : 12,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: focused ? const Color(0xFFFF7E57) : Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                   boxShadow: [
                     BoxShadow(
@@ -131,6 +137,8 @@ class SkipMarkerButton extends StatelessWidget {
                     ),
                   ],
                 ),
+                  );
+                },
               ),
               if (isAutoSkipActive && shouldShowAutoSkip)
                 Positioned.fill(
@@ -164,8 +172,7 @@ class SkipMarkerButton extends StatelessWidget {
                     ),
                   ),
                 ),
-              // Accented focus ring is visible even over auto-skip progress.
-              // D-pad focus remains visually clear after the button compacts.
+              // Dark burnt-orange edge remains visible over auto-skip progress.
               Positioned.fill(
                 child: IgnorePointer(
                   child: AnimatedBuilder(
@@ -182,9 +189,9 @@ class SkipMarkerButton extends StatelessWidget {
                           ),
                           border: Border.all(
                             color: showFocus
-                                ? Theme.of(context).colorScheme.primary
+                                ? const Color(0xFF9C3514)
                                 : Colors.transparent,
-                            width: 3,
+                            width: 2,
                           ),
                         ),
                       );
