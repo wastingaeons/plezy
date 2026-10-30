@@ -418,6 +418,27 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       return;
     }
     if (widget.onTap case final onTap?) {
+      // Specialized cards can override navigation, but should still offer
+      // connected playback. Choosing local preserves their original callback.
+      if (item is MediaItem && !item.isCatalogItem) {
+        final target = await chooseConnectedPlaybackTarget(
+          context,
+          item,
+          isOffline: widget.isOffline,
+        );
+        if (target == CompanionPlaybackTarget.cancelled || !context.mounted) {
+          return;
+        }
+        if (target == CompanionPlaybackTarget.connected) {
+          await navigateToMediaItemDetails(
+            context,
+            item,
+            isOffline: widget.isOffline,
+            onRefresh: widget.onRefresh,
+          );
+          return;
+        }
+      }
       onTap();
       return;
     }
