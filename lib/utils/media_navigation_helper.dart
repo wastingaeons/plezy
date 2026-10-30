@@ -152,7 +152,7 @@ bool shouldOfferConnectedPlayback({
     (kind == MediaKind.movie || kind == MediaKind.episode);
 
 /// A cancelled dialog must never accidentally launch a local player.
-enum CompanionPlaybackTarget { local, connected, details, cancelled }
+enum CompanionPlaybackTarget { original, local, connected, details, cancelled }
 
 /// Only an explicit request to play on the paired host may send playMedia.
 /// Browsing a title or playing locally must never send a remote command.
@@ -172,7 +172,7 @@ Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
     serverId: item.serverId,
     kind: item.kind,
   )) {
-    return CompanionPlaybackTarget.local;
+    return CompanionPlaybackTarget.original;
   }
 
   final choice = await showDialog<CompanionPlaybackTarget>(
@@ -313,8 +313,8 @@ Future<MediaNavigationResult> navigateToMediaItem(
     return MediaNavigationResult.unsupported;
   }
 
-  // All normal media card taps share this single chooser, including library
-  // movie and series cards that ordinarily open details directly.
+  // All movie and episode card taps share this chooser, including library
+  // cards that ordinarily open details directly.
   final target = await chooseConnectedPlaybackTarget(
     context,
     mi,
@@ -332,7 +332,20 @@ Future<MediaNavigationResult> navigateToMediaItem(
       isOffline: isOffline,
     );
   }
+  if (target == CompanionPlaybackTarget.local) {
+    // The user explicitly chose "Play Here"; don't let the normal card
+    // activation preference redirect them to details instead.
+    final refreshed = await navigateToVideoPlayer(
+      context,
+      metadata: mi,
+      isOffline: isOffline,
+    );
+    if (refreshed == true && context.mounted) onRefresh?.call(mi);
+    return MediaNavigationResult.navigated;
+  }
 
+  // original: no paired-device chooser was shown. Honor the user's usual
+  // movie / Continue Watching / episode activation preferences.
   switch (mi.kind) {
     case MediaKind.collection:
       final result = await Navigator.push<bool>(
