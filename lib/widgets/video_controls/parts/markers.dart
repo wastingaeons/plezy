@@ -194,12 +194,14 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     return true;
   }
 
-  /// On TV, shrink the skip control after 12 seconds without dismissing it
-  /// or surrendering its D-pad focus. Other platforms keep the 7s timeout.
+  /// TV shrinks the prompt after 12 seconds, keeping D-pad focus. Mobile
+  /// keeps its normal-size button visible for the marker; desktop retains
+  /// the original 7-second dismissal.
   void _startSkipButtonDismissTimer() {
     _skipButtonDismissTimer?.cancel();
     if (!_hasRenderedFirstFrame) return;
     final compactOnTv = PlatformDetector.isTV();
+    if (!compactOnTv && PlatformDetector.isMobile(context)) return;
     _skipButtonDismissTimer = Timer(
       Duration(seconds: compactOnTv ? 12 : 7),
       () {
@@ -242,7 +244,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     hasPlayNextPrompt: widget.playNextFocusNode != null,
     skipButtonDismissed: _skipButtonDismissed,
     controlsVisible: _showControls,
-    tvPersistent: PlatformDetector.isTV(),
+    persistUntilMarkerEnds: PlatformDetector.isTV() || PlatformDetector.isMobile(context),
   );
 
   void _activateSkipMarker() {
