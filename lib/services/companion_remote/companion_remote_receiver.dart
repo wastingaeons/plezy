@@ -31,6 +31,7 @@ class CompanionRemoteReceiver {
   VoidCallback? onTabSettings;
   VoidCallback? onHome;
   void Function(String? query)? onSearchAction;
+  void Function(Map<String, dynamic>? data)? onPlayMedia;
   VoidCallback? onNextTrack;
   VoidCallback? onPreviousTrack;
   VoidCallback? onStop;
@@ -62,7 +63,10 @@ class CompanionRemoteReceiver {
       scheduleFrameIfIdle();
     }
 
-    if (playerOwner == null && _isTransport(command.type) && (musicTransport?.call(command.type) ?? false)) return;
+    if (playerOwner == null &&
+        _isTransport(command.type) &&
+        (musicTransport?.call(command.type) ?? false))
+      return;
 
     switch (command.type) {
       case RemoteCommandType.dpadUp:
@@ -118,6 +122,8 @@ class CompanionRemoteReceiver {
       case RemoteCommandType.search:
         final query = command.data?['query'] as String?;
         onSearchAction?.call(query);
+      case RemoteCommandType.playMedia:
+        onPlayMedia?.call(command.data);
 
       case RemoteCommandType.stop:
         onStop?.call();
@@ -147,7 +153,9 @@ class CompanionRemoteReceiver {
         break;
 
       default:
-        appLogger.w('CompanionRemoteReceiver: Unhandled command type: ${command.type}');
+        appLogger.w(
+          'CompanionRemoteReceiver: Unhandled command type: ${command.type}',
+        );
     }
   }
 }
@@ -184,6 +192,7 @@ bool _isViewerInput(RemoteCommandType type) => switch (type) {
   RemoteCommandType.pause ||
   RemoteCommandType.playPause ||
   RemoteCommandType.stop ||
+  RemoteCommandType.playMedia ||
   RemoteCommandType.seekForward ||
   RemoteCommandType.seekBackward ||
   RemoteCommandType.nextTrack ||
