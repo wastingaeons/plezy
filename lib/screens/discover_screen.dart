@@ -66,6 +66,7 @@ import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
+import '../widgets/companion_remote/mobile_remote_shortcut.dart';
 import 'companion_remote/mobile_remote_screen.dart';
 
 class DiscoverScreen extends StatefulWidget {
@@ -872,8 +873,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ],
                     ),
                   ),
-                  // Companion Remote
-                  FocusableAction(
+                  // Android phones use the persistent shortcut mounted above
+                  // the profile navigator. Keep the existing toolbar action
+                  // on TV, desktop and iOS.
+                  if (!MobileCompanionRemoteShortcut.isSupported(context))
+                    FocusableAction(
                     onPressed: openCompanionRemote,
                     child: Stack(
                       children: [
