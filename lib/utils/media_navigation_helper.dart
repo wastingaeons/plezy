@@ -128,20 +128,29 @@ bool shouldOpenEpisodeDetailsForActivation({
   return episodeAction == EpisodeAction.details;
 }
 
-/// Only interrupt taps that would immediately launch local video playback.
-/// Normal media-detail browsing, music, and offline playback keep their
-/// existing activation behavior.
+/// Offer the paired host on any video title card, even when the usual tap
+/// opens a detail page rather than launching playback. Other media and offline
+/// cards retain their usual action.
 bool shouldOfferConnectedPlayback({
   required bool isOffline,
   required bool isRemote,
   required bool isConnected,
   required String? serverId,
-}) => !isOffline && isRemote && isConnected && serverId != null;
+  MediaKind kind = MediaKind.movie,
+}) =>
+    !isOffline &&
+    isRemote &&
+    isConnected &&
+    serverId != null &&
+    (kind == MediaKind.movie ||
+        kind == MediaKind.episode ||
+        kind == MediaKind.show ||
+        kind == MediaKind.season);
 
 /// A cancelled dialog must never accidentally launch a local player.
 enum CompanionPlaybackTarget { local, connected, cancelled }
 
-Future<CompanionPlaybackTarget> _choosePlaybackTarget(
+Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
   BuildContext context,
   MediaItem item, {
   required bool isOffline,
@@ -152,6 +161,7 @@ Future<CompanionPlaybackTarget> _choosePlaybackTarget(
     isRemote: remote?.isRemote ?? false,
     isConnected: remote?.isConnected ?? false,
     serverId: item.serverId,
+    kind: item.kind,
   )) {
     return CompanionPlaybackTarget.local;
   }
@@ -271,6 +281,16 @@ Future<MediaNavigationResult> navigateToMediaItem(
     return MediaNavigationResult.unsupported;
   }
 
+  // All normal media card taps share this single chooser, including library
+  // movie and series cards that ordinarily open details directly.
+  final target = await chooseConnectedPlaybackTarget(context, mi, isOffline: isOffline);
+  if (target == CompanionPlaybackTarget.cancelled || !context.mounted) {
+    return MediaNavigationResult.navigated;
+  }
+  if (target == CompanionPlaybackTarget.connected) {
+    return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
+  }
+
   switch (mi.kind) {
     case MediaKind.collection:
       final result = await Navigator.push<bool>(
@@ -304,13 +324,6 @@ Future<MediaNavigationResult> navigateToMediaItem(
       if (mi.kind == MediaKind.episode && shouldOpenEpisodeDetails) {
         return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
       }
-      final choice = await _choosePlaybackTarget(context, mi, isOffline: isOffline);
-      if (choice == CompanionPlaybackTarget.cancelled || !context.mounted) {
-        return MediaNavigationResult.navigated;
-      }
-      if (choice == CompanionPlaybackTarget.connected) {
-        return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
-      }
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
       if (result == true && context.mounted) {
         onRefresh?.call(mi);
@@ -319,13 +332,6 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.movie:
       if (playDirectly && !shouldOpenContinueWatchingDetails) {
-        final choice = await _choosePlaybackTarget(context, mi, isOffline: isOffline);
-        if (choice == CompanionPlaybackTarget.cancelled || !context.mounted) {
-          return MediaNavigationResult.navigated;
-        }
-        if (choice == CompanionPlaybackTarget.connected) {
-          return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
-        }
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
         if (result == true && context.mounted) {
           onRefresh?.call(mi);
