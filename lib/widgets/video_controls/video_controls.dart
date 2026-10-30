@@ -249,6 +249,15 @@ effectiveVersionQualityControls({
   );
 }
 
+/// The TV and touchscreen skip prompts live independently of player chrome.
+/// Desktop's historical behavior intentionally dismisses the prompt when
+/// chrome auto-hides (and can surface it again when controls return).
+@visibleForTesting
+bool shouldDismissSkipMarkerOnChromeHide({
+  required bool isTv,
+  required bool isMobile,
+}) => !isTv && !isMobile;
+
 @visibleForTesting
 bool shouldShowSkipMarkerButton({
   required bool hasFirstFrame,
