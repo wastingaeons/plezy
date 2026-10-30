@@ -2963,6 +2963,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               : null,
           localPosterPath: localPosterPath,
           onTap: () async {
+            // Detail-page episode rows used to bypass MediaCard's central
+            // cast-or-local chooser and always launch the phone player.
+            // Only movies and individual episodes offer the chooser; a
+            // connected playback request leaves this already-open show
+            // detail page in place.
+            final target = await chooseConnectedPlaybackTarget(
+              context,
+              episode,
+              isOffline: widget.isOffline,
+            );
+            if (target != CompanionPlaybackTarget.local ||
+                !context.mounted ||
+                !_canUseDetail) {
+              return;
+            }
             await navigateToVideoPlayerWithRefresh(
               context,
               metadata: episode,
