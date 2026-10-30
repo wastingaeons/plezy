@@ -1,3 +1,5 @@
+# Preliminary debug builds for Chromecast (32-bit) and Pixel (64-bit).
+# They are signed with temporary debug keys and are not Obtainium releases.
 name: Custom Android Integration Smoke Build
 
 on:
@@ -8,11 +10,25 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: custom-android-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  android-armv7:
-    name: Compile Chromecast ARMv7 Debug APK
+  android-debug:
+    name: Debug ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Chromecast ARMv7
+            platform: android-arm
+            suffix: armv7
+          - label: Pixel ARM64
+            platform: android-arm64
+            suffix: arm64
     env:
       PLEZY_CUSTOM_APPLICATION_ID: com.wastingaeons.plezy
     steps:
@@ -33,15 +49,29 @@ jobs:
           cache: true
       - name: Download locked dependencies
         run: flutter pub get --enforce-lockfile --no-example
-      - name: Verify ARMv7 custom build compiles
+      - name: Compile Android debug APK
         run: |
-          flutter build apk --debug --target-platform android-arm \
+          flutter build apk --debug --target-platform "${{ matrix.platform }}" \
             --dart-define=ENABLE_UPDATE_CHECK=false \
             --dart-define=ENABLE_SENTRY=false
-      - name: Upload smoke APK (not a release)
+      - name: Verify package and provider IDs
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=build/app/outputs/flutter-apk/app-debug.apk
+          test -s "$apk"
+          apkanalyzer manifest application-id "$apk" | grep -Fx 'com.wastingaeons.plezy'
+          aapt dump xmltree "$apk" AndroidManifest.xml > manifest-dump.txt
+          grep -F 'com.wastingaeons.plezy.fileprovider' manifest-dump.txt
+          grep -F 'com.wastingaeons.plezy.systemshelf.artwork' manifest-dump.txt
+          if grep -F 'com.edde746.plezy.fileprovider' manifest-dump.txt; then
+            echo 'Official Plezy provider authority present in custom APK' >&2
+            exit 1
+          fi
+      - name: Upload debug APK (not a production release)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: plezy-custom-armv7-debug-smoke
+          name: plezy-custom-${{ matrix.suffix }}-debug-smoke
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 5
           if-no-files-found: error
