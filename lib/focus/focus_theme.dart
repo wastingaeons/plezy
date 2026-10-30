@@ -13,6 +13,9 @@ class FocusTheme {
   /// control that small, so the focused disc grows enough to be seen move.
   static const double playerControlFocusScale = 1.12;
   static const double focusBorderWidth = 2.5;
+
+  /// High-contrast D-pad outline for media artwork; neutral UI focus keeps its theme color.
+  static const Color mediaFocusColor = Color(0xFF38BDF8);
   static const double defaultBorderRadius = 8.0;
   static const double focusGlowInnerBlurRadius = 18;
   static const double focusGlowOuterBlurRadius = 34;
