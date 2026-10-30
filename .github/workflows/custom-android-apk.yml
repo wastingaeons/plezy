@@ -31,6 +31,8 @@ jobs:
       contents: write  # Only needed to create the opt-in GitHub Release.
     env:
       FLUTTER_VERSION: "3.47.1"
+      # Install beside official Plezy without sharing its app data or signing ID.
+      PLEZY_CUSTOM_APPLICATION_ID: "com.wastingaeons.plezy"
 
     steps:
       - name: Validate release source and tag
