@@ -125,8 +125,13 @@ class CompanionRemoteBinding {
   void setTimeline(Duration position, Duration duration) =>
       _provider?.setHostPlayerTimeline(position, duration);
 
-  void setNowPlaying(String? title, {String? subtitle}) =>
-      _provider?.setHostNowPlaying(title, subtitle: subtitle);
+  void setNowPlaying(String? title, {String? subtitle, String? artworkPath, String? artworkServerId}) =>
+      _provider?.setHostNowPlaying(
+        title,
+        subtitle: subtitle,
+        artworkPath: artworkPath,
+        artworkServerId: artworkServerId,
+      );
 
   void _dispatchSeek({required bool forward}) {
     final currentPlayer = _player();

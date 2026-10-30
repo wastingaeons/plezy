@@ -61,6 +61,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String? _remoteSkipMarker;
   String? _remoteMediaTitle;
   String? _remoteMediaSubtitle;
+  String? _remoteArtworkPath;
+  String? _remoteArtworkServerId;
   int _remotePositionMs = 0;
   int _remoteDurationMs = 0;
   // Whether this device's own video player is up, as last advertised to a
@@ -70,6 +72,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String? _hostSkipMarker;
   String? _hostMediaTitle;
   String? _hostMediaSubtitle;
+  String? _hostArtworkPath;
+  String? _hostArtworkServerId;
   int _hostPositionMs = 0;
   int _hostDurationMs = 0;
   DateTime? _lastTimelinePublishedAt;
@@ -143,6 +147,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String? get remoteSkipMarker => _remoteSkipMarker;
   String? get remoteMediaTitle => _remoteMediaTitle;
   String? get remoteMediaSubtitle => _remoteMediaSubtitle;
+  String? get remoteArtworkPath => _remoteArtworkPath;
+  String? get remoteArtworkServerId => _remoteArtworkServerId;
   Duration get remotePosition => Duration(milliseconds: _remotePositionMs);
   Duration get remoteDuration => Duration(milliseconds: _remoteDurationMs);
   bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
@@ -996,6 +1002,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     final skipMarker = marker == 'intro' || marker == 'credits' ? marker : null;
     final title = active ? (command.data?['mediaTitle'] as String?) : null;
     final subtitle = active ? (command.data?['mediaSubtitle'] as String?) : null;
+    final artworkPath = active ? (command.data?['artworkPath'] as String?) : null;
+    final artworkServerId = active ? (command.data?['artworkServerId'] as String?) : null;
     final rawPosition = command.data?['positionMs'];
     final rawDuration = command.data?['durationMs'];
     final positionMs = active && rawPosition is int && rawPosition >= 0 ? rawPosition : 0;
@@ -1006,6 +1014,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         _remoteSkipMarker == skipMarker &&
         _remoteMediaTitle == title &&
         _remoteMediaSubtitle == subtitle &&
+        _remoteArtworkPath == artworkPath &&
+        _remoteArtworkServerId == artworkServerId &&
         _remotePositionMs == clampedPosition &&
         _remoteDurationMs == durationMs) {
       return;
@@ -1015,6 +1025,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _remoteSkipMarker = skipMarker;
     _remoteMediaTitle = title;
     _remoteMediaSubtitle = subtitle;
+    _remoteArtworkPath = artworkPath;
+    _remoteArtworkServerId = artworkServerId;
     _remotePositionMs = clampedPosition;
     _remoteDurationMs = durationMs;
     safeNotifyListeners();
@@ -1042,6 +1054,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     'durationMs': _hostPlayerActive ? _hostDurationMs : 0,
     if (_hostPlayerActive && _hostMediaTitle != null) 'mediaTitle': _hostMediaTitle,
     if (_hostPlayerActive && _hostMediaSubtitle != null) 'mediaSubtitle': _hostMediaSubtitle,
+    if (_hostPlayerActive && _hostArtworkPath != null) 'artworkPath': _hostArtworkPath,
+    if (_hostPlayerActive && _hostArtworkServerId != null) 'artworkServerId': _hostArtworkServerId,
     if (_hostPlayerActive && _hostSkipMarker != null)
       'skipMarker': _hostSkipMarker,
   };
@@ -1058,6 +1072,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       _hostSkipMarker = null;
       _hostMediaTitle = null;
       _hostMediaSubtitle = null;
+      _hostArtworkPath = null;
+      _hostArtworkServerId = null;
       _hostPositionMs = 0;
       _hostDurationMs = 0;
       _lastTimelinePublishedAt = null;
@@ -1068,7 +1084,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
   /// Playback metadata for the phone's in-app mini-player. The host is the
   /// source of truth; no server credentials or artwork URLs cross the wire.
-  void setHostNowPlaying(String? title, {String? subtitle}) {
+  void setHostNowPlaying(String? title, {String? subtitle, String? artworkPath, String? artworkServerId}) {
     final normalizedTitle = title?.trim();
     final normalizedSubtitle = subtitle?.trim();
     final safeTitle = normalizedTitle == null || normalizedTitle.isEmpty
@@ -1077,9 +1093,20 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     final safeSubtitle = normalizedSubtitle == null || normalizedSubtitle.isEmpty
         ? null
         : normalizedSubtitle.substring(0, normalizedSubtitle.length > 256 ? 256 : normalizedSubtitle.length);
-    if (_hostMediaTitle == safeTitle && _hostMediaSubtitle == safeSubtitle) return;
+    final normalizedArtwork = artworkPath?.trim();
+    final safeArtwork = normalizedArtwork == null || normalizedArtwork.isEmpty || normalizedArtwork.length > 2048
+        ? null
+        : normalizedArtwork;
+    final normalizedServer = artworkServerId?.trim();
+    final safeServer = normalizedServer == null || normalizedServer.isEmpty || normalizedServer.length > 256
+        ? null
+        : normalizedServer;
+    if (_hostMediaTitle == safeTitle && _hostMediaSubtitle == safeSubtitle &&
+        _hostArtworkPath == safeArtwork && _hostArtworkServerId == safeServer) return;
     _hostMediaTitle = safeTitle;
     _hostMediaSubtitle = safeSubtitle;
+    _hostArtworkPath = safeArtwork;
+    _hostArtworkServerId = safeServer;
     _publishHostPlaybackState();
   }
 

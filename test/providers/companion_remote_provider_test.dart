@@ -181,6 +181,14 @@ void main() {
       harness.provider.setHostNowPlaying('My Favorite Show', subtitle: 'Episode 3');
       expect(host.sentCommands.last.data?['mediaTitle'], 'My Favorite Show');
       expect(host.sentCommands.last.data?['mediaSubtitle'], 'Episode 3');
+      harness.provider.setHostNowPlaying(
+        'My Favorite Show',
+        subtitle: 'Episode 3',
+        artworkPath: '/library/metadata/123/thumb/456',
+        artworkServerId: 'server-1',
+      );
+      expect(host.sentCommands.last.data?['artworkPath'], '/library/metadata/123/thumb/456');
+      expect(host.sentCommands.last.data?['artworkServerId'], 'server-1');
       harness.provider.setHostPlayerTimeline(
         const Duration(minutes: 12, seconds: 34),
         const Duration(minutes: 45),

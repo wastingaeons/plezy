@@ -2,11 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../media/ids.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../navigation/profile_navigation_scope.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../screens/companion_remote/mobile_remote_screen.dart';
 import '../../services/music/music_playback_service.dart';
+import '../../utils/provider_extensions.dart';
+import '../../utils/media_image_helper.dart';
+import '../../widgets/optimized_media_image.dart';
 import '../../widgets/music/mini_player.dart';
 import 'mobile_remote_shortcut.dart';
 
@@ -132,9 +136,10 @@ class _CompanionRemoteMiniCard extends StatelessWidget {
 
   void _togglePlayback() {
     if (!remote.isRemote || !remote.isConnected || !remote.isPlayerActive) return;
-    remote.sendCommand(
-      remote.isPlayerPlaying ? RemoteCommandType.pause : RemoteCommandType.play,
-    );
+    // Send a true toggle to the TV's authoritative player rather than
+    // trusting a potentially stale phone-side playing flag. A stale flag
+    // previously made the button repeatedly issue Play instead of Pause.
+    remote.sendCommand(RemoteCommandType.playPause);
   }
 
   @override
@@ -147,6 +152,12 @@ class _CompanionRemoteMiniCard extends StatelessWidget {
     final title = remote.remoteMediaTitle?.trim();
     final secondary = remote.remoteMediaSubtitle?.trim();
     final device = remote.connectedDevice?.name ?? 'TV';
+    final artworkPath = remote.remoteArtworkPath;
+    final artworkServerId = remote.remoteArtworkServerId;
+    // Only use a local authenticated media client for the matching server.
+    // Never embed authentication tokens or external artwork URLs in the
+    // companion protocol. Missing/unreachable artwork gets a cast icon.
+    final imageClient = context.tryGetMediaClientForServer(serverIdOrNull(artworkServerId));
     final detail = <String>[
       if (secondary != null && secondary.isNotEmpty) secondary,
       if (duration > Duration.zero)
@@ -169,7 +180,26 @@ class _CompanionRemoteMiniCard extends StatelessWidget {
             child: Row(
               children: [
                 const SizedBox(width: 10),
-                Icon(Icons.cast_connected_rounded, size: 26, color: colors.primary),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: SizedBox(
+                    height: 46,
+                    width: 46,
+                    child: (imageClient != null && artworkPath != null && artworkPath.isNotEmpty)
+                        ? OptimizedMediaImage(
+                            client: imageClient,
+                            imagePath: artworkPath,
+                            imageType: ImageType.thumb,
+                            width: 46,
+                            height: 46,
+                            fallbackIcon: Icons.cast_connected_rounded,
+                          )
+                        : ColoredBox(
+                            color: colors.surfaceContainer,
+                            child: Icon(Icons.cast_connected_rounded, size: 24, color: colors.primary),
+                          ),
+                  ),
+                ),
                 const SizedBox(width: 9),
                 Expanded(
                   child: InkWell(
