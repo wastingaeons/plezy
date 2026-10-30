@@ -6,6 +6,11 @@ on:
       - integration/custom-v1-android
 permissions:
   contents: write
+
+concurrency:
+  group: format-custom-integration-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   format:
     if: github.repository == 'wastingaeons/plezy'
@@ -25,6 +30,8 @@ jobs:
             lib/widgets/video_controls/widgets/timeline_slider.dart \
             lib/widgets/video_controls/painters/buffer_range_painter.dart \
             lib/widgets/video_controls/widgets/player_focus_disc.dart \
+            lib/focus/focus_theme.dart \
+            lib/focus/card_focus_scope.dart \
             lib/widgets/media_context_menu.dart \
             lib/widgets/media_card.dart \
             lib/utils/media_navigation_helper.dart \
@@ -39,6 +46,8 @@ jobs:
             lib/widgets/video_controls/widgets/timeline_slider.dart \
             lib/widgets/video_controls/painters/buffer_range_painter.dart \
             lib/widgets/video_controls/widgets/player_focus_disc.dart \
+            lib/focus/focus_theme.dart \
+            lib/focus/card_focus_scope.dart \
             lib/widgets/media_context_menu.dart \
             lib/widgets/media_card.dart \
             lib/utils/media_navigation_helper.dart \
