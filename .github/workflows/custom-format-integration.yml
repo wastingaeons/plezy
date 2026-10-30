@@ -18,13 +18,32 @@ jobs:
         with:
           channel: stable
           flutter-version: '3.47.1'
-      - name: Format integrated skip UI
-        run: dart format lib/widgets/video_controls/widgets/skip_marker_button.dart lib/widgets/video_controls/widgets/timeline_slider.dart
+      - name: Format changed Flutter files
+        run: |
+          dart format \
+            lib/widgets/video_controls/widgets/skip_marker_button.dart \
+            lib/widgets/video_controls/widgets/timeline_slider.dart \
+            lib/widgets/video_controls/painters/buffer_range_painter.dart \
+            lib/widgets/video_controls/widgets/player_focus_disc.dart \
+            lib/widgets/media_context_menu.dart \
+            lib/widgets/media_card.dart \
+            lib/utils/media_navigation_helper.dart \
+            test/utils/media_navigation_helper_test.dart \
+            test/widgets/video_controls/buffer_range_focus_test.dart
       - name: Save formatting commit
         shell: bash
         run: |
           set -euo pipefail
-          git add -- lib/widgets/video_controls/widgets/skip_marker_button.dart lib/widgets/video_controls/widgets/timeline_slider.dart
+          git add -- \
+            lib/widgets/video_controls/widgets/skip_marker_button.dart \
+            lib/widgets/video_controls/widgets/timeline_slider.dart \
+            lib/widgets/video_controls/painters/buffer_range_painter.dart \
+            lib/widgets/video_controls/widgets/player_focus_disc.dart \
+            lib/widgets/media_context_menu.dart \
+            lib/widgets/media_card.dart \
+            lib/utils/media_navigation_helper.dart \
+            test/utils/media_navigation_helper_test.dart \
+            test/widgets/video_controls/buffer_range_focus_test.dart
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
