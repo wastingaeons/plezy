@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
+
 import '../../../media/media_source_info.dart';
 import '../../../mpv/models.dart';
 import '../../../i18n/strings.g.dart';
@@ -116,14 +117,18 @@ class _TimelineSliderState extends State<TimelineSlider> {
     _applyScrub(details.localPosition.dx, sliderContext);
   }
 
-  void _handleScrubUpdate(DragUpdateDetails details, BuildContext sliderContext) {
+  void _handleScrubUpdate(
+    DragUpdateDetails details,
+    BuildContext sliderContext,
+  ) {
     if (!_scrubbing) return;
     _applyScrub(details.localPosition.dx, sliderContext);
   }
 
   void _applyScrub(double dx, BuildContext sliderContext) {
     final durationMs = widget.duration.inMilliseconds;
-    final trackWidth = renderBoxSizeOf(sliderContext).width - 2 * _sliderPadding;
+    final trackWidth =
+        renderBoxSizeOf(sliderContext).width - 2 * _sliderPadding;
     if (durationMs <= 0 || trackWidth <= 0) return;
     final fraction = ((dx - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
     final value = fraction * durationMs;
@@ -139,7 +144,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final value = _dragValue;
     setState(() => _dragValue = null);
     try {
-      if (value != null) widget.onSeekEnd(Duration(milliseconds: value.round()));
+      if (value != null)
+        widget.onSeekEnd(Duration(milliseconds: value.round()));
     } finally {
       widget.onScrubEnd?.call();
     }
@@ -150,7 +156,10 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final durationMs = widget.duration.inMilliseconds;
     if (durationMs <= 0) return;
     final base = _dragValue ?? widget.position.inMilliseconds.toDouble();
-    final target = (base + delta.inMilliseconds).clamp(0.0, durationMs.toDouble());
+    final target = (base + delta.inMilliseconds).clamp(
+      0.0,
+      durationMs.toDouble(),
+    );
     widget.onSeekEnd(Duration(milliseconds: target.round()));
   }
 
@@ -162,13 +171,20 @@ class _TimelineSliderState extends State<TimelineSlider> {
     return switch (frame) {
       null => null,
       BytesScrubFrame(:final bytes) => bytes,
-      SheetScrubFrame(:final sheet, :final tileColumn, :final tileRow, :final sheetColumns, :final sheetRows) =>
+      SheetScrubFrame(
+        :final sheet,
+        :final tileColumn,
+        :final tileRow,
+        :final sheetColumns,
+        :final sheetRows,
+      ) =>
         Object.hash(sheet, tileColumn, tileRow, sheetColumns, sheetRows),
     };
   }
 
   void _clearHoverPosition() {
-    if (_mousePosition == null && _hoverTimeMs == null && _hoverFrame == null) return;
+    if (_mousePosition == null && _hoverTimeMs == null && _hoverFrame == null)
+      return;
     setState(() {
       _mousePosition = null;
       _hoverTimeMs = null;
@@ -187,7 +203,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
     final fraction = ((pixelX - _sliderPadding) / trackWidth).clamp(0.0, 1.0);
     final timeMs = (fraction * durationMs).round();
-    final frame = widget.thumbnailDataBuilder?.call(Duration(milliseconds: timeMs));
+    final frame = widget.thumbnailDataBuilder?.call(
+      Duration(milliseconds: timeMs),
+    );
     final frameKey = _scrubFrameKey(frame);
     final labelSecond = timeMs ~/ 1000;
     final pixelBucket = (pixelX / 4).round();
@@ -209,7 +227,12 @@ class _TimelineSliderState extends State<TimelineSlider> {
     });
   }
 
-  Widget? _buildActiveTooltip(double sliderWidth, int durationMs, double displayValue, Duration displayPosition) {
+  Widget? _buildActiveTooltip(
+    double sliderWidth,
+    int durationMs,
+    double displayValue,
+    Duration displayPosition,
+  ) {
     if (durationMs <= 0 || sliderWidth <= 0) return null;
 
     final trackWidth = sliderWidth - 2 * _sliderPadding;
@@ -221,7 +244,12 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
     if (_mousePosition != null) {
       final time = Duration(milliseconds: _hoverTimeMs ?? 0);
-      return _buildTooltip(sliderWidth, _mousePosition!, time, frame: _hoverFrame);
+      return _buildTooltip(
+        sliderWidth,
+        _mousePosition!,
+        time,
+        frame: _hoverFrame,
+      );
     }
 
     if (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null) {
@@ -233,16 +261,26 @@ class _TimelineSliderState extends State<TimelineSlider> {
     return null;
   }
 
-  Widget _buildTooltip(double sliderWidth, double pixelX, Duration time, {ScrubFrame? frame}) {
+  Widget _buildTooltip(
+    double sliderWidth,
+    double pixelX,
+    Duration time, {
+    ScrubFrame? frame,
+  }) {
     final resolvedFrame = frame ?? widget.thumbnailDataBuilder?.call(time);
     final hasThumbnail = resolvedFrame != null;
 
     final tooltipWidth = hasThumbnail ? _thumbWidth : 64.0;
-    final tooltipHeight = hasThumbnail ? _thumbWidth / resolvedFrame.aspectRatio : 26.0;
+    final tooltipHeight = hasThumbnail
+        ? _thumbWidth / resolvedFrame.aspectRatio
+        : 26.0;
     final tooltipTop = -(tooltipHeight + 2.0);
 
     // Center tooltip on cursor, clamped so it stays within the slider bounds
-    final left = (pixelX - tooltipWidth / 2).clamp(0.0, (sliderWidth - tooltipWidth).clamp(0.0, double.infinity));
+    final left = (pixelX - tooltipWidth / 2).clamp(
+      0.0,
+      (sliderWidth - tooltipWidth).clamp(0.0, double.infinity),
+    );
 
     final timeLabel = Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -272,14 +310,25 @@ class _TimelineSliderState extends State<TimelineSlider> {
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: const BorderRadius.all(Radius.circular(6)),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 1)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     _ScrubFrameView(frame: resolvedFrame),
-                    Positioned(bottom: 4, left: 0, right: 0, child: Center(child: timeLabel)),
+                    Positioned(
+                      bottom: 4,
+                      left: 0,
+                      right: 0,
+                      child: Center(child: timeLabel),
+                    ),
                   ],
                 ),
               )
@@ -293,14 +342,17 @@ class _TimelineSliderState extends State<TimelineSlider> {
     final durationMs = widget.duration.inMilliseconds;
     final max = durationMs > 0 ? durationMs.toDouble() : 0.0;
     final displayValue = max > 0
-        ? (_dragValue ?? widget.position.inMilliseconds.toDouble()).clamp(0.0, max).toDouble()
+        ? (_dragValue ?? widget.position.inMilliseconds.toDouble())
+              .clamp(0.0, max)
+              .toDouble()
         : 0.0;
     final displayPosition = Duration(milliseconds: displayValue.toInt());
     final hasTooltip =
         durationMs > 0 &&
         (_dragValue != null ||
             _mousePosition != null ||
-            (widget.showKeyRepeatThumbnail && widget.thumbnailDataBuilder != null));
+            (widget.showKeyRepeatThumbnail &&
+                widget.thumbnailDataBuilder != null));
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
     final showFocus = _isFocused && isKeyboardMode;
 
@@ -316,13 +368,17 @@ class _TimelineSliderState extends State<TimelineSlider> {
         gestures: widget.enabled
             ? <Type, GestureRecognizerFactory>{
                 EagerHorizontalDragGestureRecognizer:
-                    GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
+                    GestureRecognizerFactoryWithHandlers<
+                      EagerHorizontalDragGestureRecognizer
+                    >(
                       () =>
                           EagerHorizontalDragGestureRecognizer(debugOwner: this)
                             ..dragStartBehavior = DragStartBehavior.down,
                       (instance) {
-                        instance.onStart = (details) => _handleScrubStart(details, sliderContext);
-                        instance.onUpdate = (details) => _handleScrubUpdate(details, sliderContext);
+                        instance.onStart = (details) =>
+                            _handleScrubStart(details, sliderContext);
+                        instance.onUpdate = (details) =>
+                            _handleScrubUpdate(details, sliderContext);
                         instance.onEnd = (_) => _handleScrubEnd();
                         instance.onCancel = _handleScrubEnd;
                       },
@@ -337,12 +393,16 @@ class _TimelineSliderState extends State<TimelineSlider> {
             Positioned.fill(
               child: IgnorePointer(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: _sliderPadding),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _sliderPadding,
+                  ),
                   child: CustomPaint(
                     painter: BufferRangePainter(
                       ranges: widget.bufferRanges,
                       duration: widget.duration,
-                      chapters: widget.chaptersLoaded && widget.showChapterMarkersOnTimeline
+                      chapters:
+                          widget.chaptersLoaded &&
+                              widget.showChapterMarkersOnTimeline
                           ? widget.chapters
                           : const [],
                     ),
@@ -355,14 +415,22 @@ class _TimelineSliderState extends State<TimelineSlider> {
               slider: true,
               value: formatDurationTimestamp(displayPosition),
               increasedValue: formatDurationTimestamp(
-                Duration(milliseconds: (displayValue + 10000).clamp(0.0, max).round()),
+                Duration(
+                  milliseconds: (displayValue + 10000).clamp(0.0, max).round(),
+                ),
               ),
               decreasedValue: formatDurationTimestamp(
-                Duration(milliseconds: (displayValue - 10000).clamp(0.0, max).round()),
+                Duration(
+                  milliseconds: (displayValue - 10000).clamp(0.0, max).round(),
+                ),
               ),
               enabled: widget.enabled,
-              onIncrease: widget.enabled && durationMs > 0 ? () => _semanticSeekBy(const Duration(seconds: 10)) : null,
-              onDecrease: widget.enabled && durationMs > 0 ? () => _semanticSeekBy(const Duration(seconds: -10)) : null,
+              onIncrease: widget.enabled && durationMs > 0
+                  ? () => _semanticSeekBy(const Duration(seconds: 10))
+                  : null,
+              onDecrease: widget.enabled && durationMs > 0
+                  ? () => _semanticSeekBy(const Duration(seconds: -10))
+                  : null,
               child: ExcludeSemantics(
                 child: IgnorePointer(
                   child: SliderTheme(
@@ -370,14 +438,20 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       trackHeight: 8,
                       trackGap: 0,
                       padding: .zero,
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 0,
+                      ),
                       tickMarkShape: SliderTickMarkShape.noTickMark,
                       // D-pad focus swaps the 4x20 handle for a shadowed knob
                       // (#2383); in pointer mode the handle always shows, and
                       // an unfocused timeline in D-pad mode shows none.
-                      thumbShape: showFocus ? const _FocusKnobThumbShape() : null,
+                      thumbShape: showFocus
+                          ? const _FocusKnobThumbShape()
+                          : null,
                       thumbSize: WidgetStatePropertyAll(
-                        (!isKeyboardMode || _isFocused) ? const Size(4, 20) : Size.zero,
+                        (!isKeyboardMode || _isFocused)
+                            ? const Size(4, 20)
+                            : Size.zero,
                       ),
                     ),
                     child: Slider(
@@ -399,7 +473,12 @@ class _TimelineSliderState extends State<TimelineSlider> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final tooltip = hasTooltip
-                        ? _buildActiveTooltip(constraints.maxWidth, durationMs, displayValue, displayPosition)
+                        ? _buildActiveTooltip(
+                            constraints.maxWidth,
+                            durationMs,
+                            displayValue,
+                            displayPosition,
+                          )
                         : null;
                     return Stack(clipBehavior: Clip.none, children: [?tooltip]);
                   },
@@ -434,7 +513,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
       builder: (context) => MouseRegion(
         cursor: widget.enabled ? SystemMouseCursors.click : MouseCursor.defer,
         onHover: (event) {
-          final trackWidth = renderBoxSizeOf(context).width - 2 * _sliderPadding;
+          final trackWidth =
+              renderBoxSizeOf(context).width - 2 * _sliderPadding;
           _updateHoverPosition(event.localPosition.dx, trackWidth, durationMs);
         },
         onExit: (_) => _clearHoverPosition(),
@@ -465,8 +545,14 @@ class _ScrubFrameView extends StatelessWidget {
               f.bytes,
               fit: BoxFit.cover,
               gaplessPlayback: true,
-              cacheWidth: _cacheDimension(constraints.maxWidth, devicePixelRatio),
-              cacheHeight: _cacheDimension(constraints.maxHeight, devicePixelRatio),
+              cacheWidth: _cacheDimension(
+                constraints.maxWidth,
+                devicePixelRatio,
+              ),
+              cacheHeight: _cacheDimension(
+                constraints.maxHeight,
+                devicePixelRatio,
+              ),
               errorBuilder: (_, _, _) => const SizedBox.shrink(),
             );
           },
@@ -515,7 +601,8 @@ class _FocusKnobThumbShape extends SliderComponentShape {
   const _FocusKnobThumbShape();
 
   @override
-  Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size.fromRadius(playerFocusKnobRadius);
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) =>
+      const Size.fromRadius(playerFocusKnobRadius);
 
   @override
   void paint(

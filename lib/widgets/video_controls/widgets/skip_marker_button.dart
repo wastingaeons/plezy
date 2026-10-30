@@ -171,7 +171,8 @@ class SkipMarkerButton extends StatelessWidget {
                   child: AnimatedBuilder(
                     animation: focusNode,
                     builder: (context, _) {
-                      final showFocus = focusNode.hasFocus &&
+                      final showFocus =
+                          focusNode.hasFocus &&
                           InputModeTracker.isKeyboardMode(context);
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
