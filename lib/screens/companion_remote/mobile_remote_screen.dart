@@ -27,7 +27,72 @@ class MobileRemoteScreen extends StatefulWidget {
   State<MobileRemoteScreen> createState() => _MobileRemoteScreenState();
 }
 
+/// Only a screen opened while disconnected should return to browsing once
+/// pairing succeeds. Reopening the remote while already connected (or while
+/// reconnecting) is an intentional visit to the remote controls.
+@visibleForTesting
+bool shouldReturnToBrowsingAfterRemoteConnect({
+  required RemoteSessionStatus initialStatus,
+  required bool isRemote,
+  required bool isConnected,
+}) =>
+    initialStatus != RemoteSessionStatus.connected &&
+    initialStatus != RemoteSessionStatus.reconnecting &&
+    isRemote &&
+    isConnected;
+
 class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
+  late final CompanionRemoteProvider _remoteProvider;
+  late final RemoteSessionStatus _initialRemoteStatus;
+  bool _returnScheduled = false;
+  bool _returnedAfterPairing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _remoteProvider = context.read<CompanionRemoteProvider>();
+    _initialRemoteStatus = _remoteProvider.status;
+    _remoteProvider.addListener(_onRemoteSessionChanged);
+  }
+
+  void _onRemoteSessionChanged() {
+    if (_returnScheduled || _returnedAfterPairing || !mounted ||
+        !shouldReturnToBrowsingAfterRemoteConnect(
+          initialStatus: _initialRemoteStatus,
+          isRemote: _remoteProvider.isRemote,
+          isConnected: _remoteProvider.isConnected,
+        )) {
+      return;
+    }
+
+    // The provider notifies listeners while pairing completes. Pop after the
+    // frame, not during its Consumer rebuild, so the previous route survives
+    // with its existing tab, scroll position and search state intact.
+    _returnScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _returnScheduled = false;
+      if (!mounted ||
+          !shouldReturnToBrowsingAfterRemoteConnect(
+            initialStatus: _initialRemoteStatus,
+            isRemote: _remoteProvider.isRemote,
+            isConnected: _remoteProvider.isConnected,
+          )) {
+        return;
+      }
+      final route = ModalRoute.of(context);
+      final navigator = Navigator.of(context);
+      if (route?.isCurrent != true || !navigator.canPop()) return;
+      _returnedAfterPairing = true;
+      navigator.pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _remoteProvider.removeListener(_onRemoteSessionChanged);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return OverlaySheetHost(
