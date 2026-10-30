@@ -136,9 +136,8 @@ bool shouldOpenEpisodeDetailsForActivation({
   return episodeAction == EpisodeAction.details;
 }
 
-/// Offer the paired host on any video title card, even when the usual tap
-/// opens a detail page rather than launching playback. Other media and offline
-/// cards retain their usual action.
+/// Only a single playable video (movie or episode) should ask where to play.
+/// Series and season cards must navigate normally, even while paired.
 bool shouldOfferConnectedPlayback({
   required bool isOffline,
   required bool isRemote,
@@ -150,10 +149,7 @@ bool shouldOfferConnectedPlayback({
     isRemote &&
     isConnected &&
     serverId != null &&
-    (kind == MediaKind.movie ||
-        kind == MediaKind.episode ||
-        kind == MediaKind.show ||
-        kind == MediaKind.season);
+    (kind == MediaKind.movie || kind == MediaKind.episode);
 
 /// A cancelled dialog must never accidentally launch a local player.
 enum CompanionPlaybackTarget { local, connected, cancelled }
