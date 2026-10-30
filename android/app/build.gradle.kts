@@ -131,13 +131,37 @@ val prepareMpvFfmpegDevelopment = tasks.register("prepareMpvFfmpegDevelopment") 
       val includeDir = File(staging, "include")
       val nativeDir = File(staging, "native")
       staging.mkdirs()
-      try {
-        providers.exec {
-          commandLine("curl", "-sfL", mpvFfmpegSourceUrl, "-o", sourceArchive.absolutePath)
-        }.result.get().assertNormalExitValue()
-      } catch (error: Exception) {
-        throw GradleException("Failed to download FFmpeg $mpvFfmpegVersion headers", error)
+      // The primary source intermittently fails from cloud CI runners. Retry
+      // transient network errors and then try the canonical www hostname.
+      val sourceUrls = listOf(
+        mpvFfmpegSourceUrl,
+        "https://www.ffmpeg.org/releases/ffmpeg-$mpvFfmpegVersion.tar.xz"
+      )
+      var lastDownloadError: Exception? = null
+      var downloaded = false
+      for (sourceUrl in sourceUrls) {
+        try {
+          providers.exec {
+            commandLine(
+              "curl", "-fL", "--retry", "3", "--retry-all-errors",
+              "--retry-delay", "3", "--connect-timeout", "20",
+              "--max-time", "120", sourceUrl, "-o", sourceArchive.absolutePath
+            )
+          }.result.get().assertNormalExitValue()
+          downloaded = true
+          break
+        } catch (error: Exception) {
+          lastDownloadError = error
+          logger.warn("FFmpeg header download failed from $sourceUrl; attempting fallback if available")
+          sourceArchive.delete()
+        }
       }
+      if (!downloaded) {
+        throw GradleException(
+          "Failed to download FFmpeg $mpvFfmpegVersion headers from all sources", lastDownloadError
+        )
+      }
+      // Regardless of source, accept only the expected upstream SHA-256.
       verifySha256(sourceArchive, mpvFfmpegSourceSha256, "FFmpeg $mpvFfmpegVersion source")
 
       val extractedSource = File(staging, "source").apply { mkdirs() }
@@ -286,6 +310,8 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
 
 android {
   namespace = "com.edde746.plezy"
+  // Generate BuildConfig so custom APKs use their own content provider authorities.
+  buildFeatures { buildConfig = true }
   compileSdk = flutter.compileSdkVersion
   buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
@@ -301,7 +327,11 @@ android {
   }
 
   defaultConfig {
-    applicationId = "com.edde746.plezy"
+    // Set only in our GitHub Actions build. Keep upstream's package ID for
+    // ordinary local builds and upstream compatibility.
+    applicationId = System.getenv("PLEZY_CUSTOM_APPLICATION_ID") ?: "com.edde746.plezy"
+    // The launcher label remains Plezy for upstream and separately packaged fork builds.
+    manifestPlaceholders["plezyAppLabel"] = "Plezy"
     minSdk = 25 // Fire OS 6.x (API 25); the mpv-android AAR shares the same floor
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode

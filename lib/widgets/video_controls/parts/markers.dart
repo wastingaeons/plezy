@@ -36,6 +36,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     final hasMarkerState =
         _currentMarker != null ||
         _skipButtonDismissed ||
+        _skipButtonCompact ||
         _autoSkipTimer != null ||
         _autoSkipActive.value ||
         _autoSkipProgress.value != 0.0 ||
@@ -46,6 +47,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       _setControlsState(() {
         _currentMarker = null;
         _skipButtonDismissed = false;
+        _skipButtonCompact = false;
       });
     }
     _releaseSkipMarkerFocusToSurface();
@@ -78,18 +80,20 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _setControlsState(() {
       _currentMarker = foundMarker;
       _skipButtonDismissed = false;
+      _skipButtonCompact = false;
     });
 
     _startAutoSkipTimer(foundMarker);
 
-    // Auto-skip OFF: dismiss button after 7s if no interaction
-    // Auto-skip ON: button stays until controls hide
+    // Auto-skip OFF: on TV become compact after 12s; other platforms
+    // retain their 7s dismissal. Auto-skip ON follows its countdown.
     if (!_shouldAutoSkipForMarker(foundMarker)) {
       _startSkipButtonDismissTimer();
     }
 
     // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode)
-    if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false)) {
+    if (PlatformDetector.isTV() &&
+        InputModeTracker.isKeyboardMode(context, listen: false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         // An open sheet (tracks, settings, subtitle search) or a route above
@@ -109,7 +113,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     final marker = _currentMarker!;
     final endTime = marker.endTime;
     final duration = widget.player.state.duration;
-    final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
+    final isAtEnd =
+        duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
 
     final handsOffToCompletion = marker.isCredits && isAtEnd;
     if (handsOffToCompletion) {
@@ -128,6 +133,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     if (!mounted) return;
     _setControlsState(() {
       _currentMarker = null;
+      _skipButtonCompact = false;
     });
     // The play-next flow requests its own focus; claiming the surface here
     // would race it.
@@ -188,21 +194,28 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     return true;
   }
 
-  /// Starts/restarts the skip button dismiss timer. When it fires, hides the
-  /// button and cancels any active auto-skip countdown.
+  /// TV shrinks the prompt after 12 seconds, keeping D-pad focus. Mobile
+  /// keeps its normal-size button visible for the marker; desktop retains
+  /// the original 7-second dismissal.
   void _startSkipButtonDismissTimer() {
     _skipButtonDismissTimer?.cancel();
     if (!_hasRenderedFirstFrame) return;
-    _skipButtonDismissTimer = Timer(const Duration(seconds: 7), () {
-      if (!mounted || _currentMarker == null) return;
-      _setControlsState(() {
-        _skipButtonDismissed = true;
-      });
-      // The dismissed flag only hides the button while the chrome is down;
-      // with the chrome up the button stays visible and keeps its focus.
-      if (!_showControls) _releaseSkipMarkerFocusToSurface();
-      _cancelAutoSkipTimer();
-    });
+    final compactOnTv = PlatformDetector.isTV();
+    if (!compactOnTv && PlatformDetector.isMobile(context)) return;
+    _skipButtonDismissTimer = Timer(
+      Duration(seconds: compactOnTv ? 12 : 7),
+      () {
+        if (!mounted || _currentMarker == null || _skipButtonDismissed) return;
+        if (compactOnTv) {
+          _setControlsState(() => _skipButtonCompact = true);
+          return;
+        }
+        _setControlsState(() => _skipButtonDismissed = true);
+        // Elsewhere, a timed-out prompt returns control to the video surface.
+        if (!_showControls) _releaseSkipMarkerFocusToSurface();
+        _cancelAutoSkipTimer();
+      },
+    );
   }
 
   void _cancelSkipButtonDismissTimer() {
@@ -217,7 +230,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
 
-  bool _shouldAutoSkipForMarker(MediaMarker marker) => _skipModeFor(marker) == SkipMarkerMode.auto;
+  bool _shouldAutoSkipForMarker(MediaMarker marker) =>
+      _skipModeFor(marker) == SkipMarkerMode.auto;
 
   bool _shouldShowAutoSkip() {
     if (_currentMarker == null) return false;
@@ -230,6 +244,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     hasPlayNextPrompt: widget.playNextFocusNode != null,
     skipButtonDismissed: _skipButtonDismissed,
     controlsVisible: _showControls,
+    persistUntilMarkerEnds:
+        PlatformDetector.isTV() || PlatformDetector.isMobile(context),
   );
 
   void _activateSkipMarker() {
@@ -276,8 +292,17 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
               autoSkipDelay: _autoSkipDelay,
               autoSkipProgress: autoSkipProgress,
               focusNode: _skipMarkerFocusNode,
+              compact: PlatformDetector.isTV() && _skipButtonCompact,
               onActivate: _activateSkipMarker,
-              onFocusDown: () => _desktopControlsKey.currentState?.requestPlayPauseFocus(),
+              onFocusDown: () {
+                // A compact button remains focused while the OSD is hidden.
+                // Down should reveal the controls instead of trapping the remote.
+                if (!_showControls) {
+                  _showControlsWithFocus();
+                } else {
+                  _desktopControlsKey.currentState?.requestPlayPauseFocus();
+                }
+              },
             );
           },
         );

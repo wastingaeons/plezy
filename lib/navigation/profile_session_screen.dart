@@ -39,6 +39,7 @@ import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/watch_together.dart' show WatchNoticeListener;
 import '../widgets/music/mini_player.dart';
+import '../widgets/companion_remote/mobile_remote_shortcut.dart';
 import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
 import 'settings_shortcut.dart';
@@ -337,6 +338,7 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
   // video player / now-playing screen is up; the inset controller lets
   // MainScreen report its bottom-bar height so the overlay floats above it.
   final _musicRouteObserver = MusicUiRouteObserver();
+  final _mobileRemoteShortcutRouteObserver = MobileRemoteShortcutRouteObserver();
   final _miniPlayerInsets = MiniPlayerInsetController();
   final _settingsRouteTracker = SettingsRouteTracker();
 
@@ -353,6 +355,7 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
     profileNavigationRegistry.detachMainScaffoldMessenger(_mainScaffoldMessengerKey);
     _miniPlayerInsets.dispose();
     _musicRouteObserver.suppress.dispose();
+    _mobileRemoteShortcutRouteObserver.dispose();
     super.dispose();
   }
 
@@ -397,12 +400,36 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
                     observers: [
                       _routeObserver,
                       _musicRouteObserver,
+                      _mobileRemoteShortcutRouteObserver,
                       _settingsRouteTracker,
                       BackKeySuppressorObserver(),
                     ],
                     onGenerateRoute: _onGenerateRoute,
                   ),
                   const Positioned.fill(child: MusicMiniPlayerOverlay()),
+                  // One phone-only shortcut for every content route. It sits
+                  // below the app bar to avoid intercepting normal page actions.
+                  // The observer hides it on playback, the remote itself and
+                  // modal routes; the connected state comes from the same
+                  // profile-scoped provider as the Discover toolbar did.
+                  if (MobileCompanionRemoteShortcut.isSupported(context))
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: SafeArea(
+                        left: false,
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 64, right: 12),
+                          child: ValueListenableBuilder<bool>(
+                            valueListenable: _mobileRemoteShortcutRouteObserver.isVisible,
+                            builder: (context, visible, _) => visible
+                                ? const MobileCompanionRemoteShortcut()
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

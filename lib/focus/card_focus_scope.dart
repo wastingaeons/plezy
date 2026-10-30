@@ -13,7 +13,11 @@ import 'focus_theme.dart';
 /// box: a stable `child:` card subtree (e.g. the TV rail's MediaCard) is not
 /// rebuilt.
 class CardFocusScope extends InheritedWidget {
-  const CardFocusScope({super.key, required this.showFocus, required super.child});
+  const CardFocusScope({
+    super.key,
+    required this.showFocus,
+    required super.child,
+  });
 
   /// Whether the enclosing wrapper currently shows focus visuals
   /// (focused while in keyboard/d-pad input mode).
@@ -21,10 +25,12 @@ class CardFocusScope extends InheritedWidget {
 
   /// Null when no delegating wrapper is above (touch mode skips the focus
   /// wrappers entirely) — [CardFocusBorder] then renders its child bare.
-  static bool? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<CardFocusScope>()?.showFocus;
+  static bool? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<CardFocusScope>()?.showFocus;
 
   @override
-  bool updateShouldNotify(CardFocusScope oldWidget) => showFocus != oldWidget.showFocus;
+  bool updateShouldNotify(CardFocusScope oldWidget) =>
+      showFocus != oldWidget.showFocus;
 }
 
 /// Draws the focus border around its child based on the enclosing
@@ -40,6 +46,7 @@ class CardFocusBorder extends StatelessWidget {
     this.borderRadius = FocusTheme.defaultBorderRadius,
     this.borderRadii,
     this.strokeAlign = BorderSide.strokeAlignOutside,
+    this.focusColor,
     required this.child,
   });
 
@@ -49,6 +56,9 @@ class CardFocusBorder extends StatelessWidget {
   final BorderRadius? borderRadii;
 
   final double strokeAlign;
+
+  /// Optional color for an individually styled media-card focus border.
+  final Color? focusColor;
   final Widget child;
 
   @override
@@ -65,6 +75,7 @@ class CardFocusBorder extends StatelessWidget {
         borderRadius: borderRadius,
         radii: borderRadii,
         borderStrokeAlign: strokeAlign,
+        color: focusColor,
       ),
       child: child,
     );

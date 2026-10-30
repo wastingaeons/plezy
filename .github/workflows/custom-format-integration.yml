@@ -1,0 +1,75 @@
+# Temporary, developer-branch-only action to apply exact pinned Dart formatting.
+name: Format integrated skip control
+on:
+  push:
+    branches:
+      - integration/custom-v1-android
+permissions:
+  contents: write
+
+concurrency:
+  group: format-custom-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    if: github.repository == 'wastingaeons/plezy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install Flutter 3.47.1
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.47.1'
+      - name: Format changed Flutter files
+        run: |
+          dart format \
+            lib/widgets/video_controls/widgets/skip_marker_button.dart \
+            lib/widgets/video_controls/video_controls.dart \
+            lib/widgets/video_controls/parts/markers.dart \
+            lib/widgets/video_controls/parts/visibility.dart \
+            test/widgets/video_controls_tv_skip_prompt_test.dart \
+            lib/widgets/video_controls/widgets/timeline_slider.dart \
+            lib/widgets/video_controls/painters/buffer_range_painter.dart \
+            lib/widgets/video_controls/widgets/player_focus_disc.dart \
+            lib/focus/focus_theme.dart \
+            lib/focus/card_focus_scope.dart \
+            lib/widgets/media_context_menu.dart \
+            lib/widgets/media_card.dart \
+            lib/screens/media_detail_screen.dart \
+            lib/screens/companion_remote/mobile_remote_screen.dart \
+            test/screens/companion_remote/mobile_remote_return_test.dart \
+            lib/utils/media_navigation_helper.dart \
+            test/utils/media_navigation_helper_test.dart \
+            test/widgets/video_controls/buffer_range_focus_test.dart
+      - name: Save formatting commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- \
+            lib/widgets/video_controls/widgets/skip_marker_button.dart \
+            lib/widgets/video_controls/video_controls.dart \
+            lib/widgets/video_controls/parts/markers.dart \
+            lib/widgets/video_controls/parts/visibility.dart \
+            test/widgets/video_controls_tv_skip_prompt_test.dart \
+            lib/widgets/video_controls/widgets/timeline_slider.dart \
+            lib/widgets/video_controls/painters/buffer_range_painter.dart \
+            lib/widgets/video_controls/widgets/player_focus_disc.dart \
+            lib/focus/focus_theme.dart \
+            lib/focus/card_focus_scope.dart \
+            lib/widgets/media_context_menu.dart \
+            lib/widgets/media_card.dart \
+            lib/screens/media_detail_screen.dart \
+            lib/screens/companion_remote/mobile_remote_screen.dart \
+            test/screens/companion_remote/mobile_remote_return_test.dart \
+            lib/utils/media_navigation_helper.dart \
+            test/utils/media_navigation_helper_test.dart \
+            test/widgets/video_controls/buffer_range_focus_test.dart
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "style: dart format integrated TV controls"
+            git push origin HEAD:integration/custom-v1-android
+          fi
