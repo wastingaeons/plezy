@@ -109,6 +109,23 @@ void main() {
       receiver.onSeekForward = null;
     });
 
+    test('playMedia bypasses an active music transport handler', () {
+      Map<String, dynamic>? received;
+      receiver.onPlayMedia = (data) => received = data;
+      addTearDown(() => receiver.onPlayMedia = null);
+
+      receiver.handleCommand(
+        const RemoteCommand(
+          type: RemoteCommandType.playMedia,
+          data: {'serverId': 'srv1', 'ratingKey': '42'},
+        ),
+        null,
+      );
+
+      expect(received, {'serverId': 'srv1', 'ratingKey': '42'});
+      expect(routed, isEmpty);
+    });
+
     test('transport buttons reach the music session while no video player owns them', () {
       for (final type in const [
         RemoteCommandType.playPause,
