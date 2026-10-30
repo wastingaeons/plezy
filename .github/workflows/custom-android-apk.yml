@@ -105,13 +105,40 @@ jobs:
 
       - name: Build split release APKs
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUBLISH_RELEASE: ${{ inputs.publish_release }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
-          # A monotonically increasing Android versionCode allows Obtainium
-          # to install future releases without uninstalling existing data.
+          # Android versionCode must increase for in-place upgrades.
           build_number=$((100000 + GITHUB_RUN_NUMBER))
+
+          # Obtainium compares the installed APK's Android versionName with
+          # the GitHub release tag. Keep these aligned on published releases:
+          # custom-v1.0.1 -> Android versionName=1.0.1. Never reuse upstream
+          # Plezy's 2.25.0 (pubspec.yaml) for our independent release series.
+          # Non-publishing feature/smoke builds retain the upstream name.
+          release_tag=""
+          if [[ "$GITHUB_REF" == refs/tags/custom-v* ]]; then
+            release_tag="${GITHUB_REF#refs/tags/}"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$PUBLISH_RELEASE" == "true" ]]; then
+            release_tag="$RELEASE_TAG"
+          fi
+
+          build_name_args=()
+          if [[ -n "$release_tag" ]]; then
+            if [[ ! "$release_tag" =~ ^custom-v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+              echo "Invalid release tag: $release_tag" >&2
+              exit 1
+            fi
+            release_version="${release_tag#custom-v}"
+            build_name_args=(--build-name="$release_version")
+            echo "Publishing versionName=$release_version with versionCode=$build_number"
+          fi
+
           flutter build apk --release --split-per-abi \
-            --build-number="$build_number" \
+            --build-number="$build_number" "${build_name_args[@]}" \
             --dart-define=ENABLE_UPDATE_CHECK=false \
             --dart-define=ENABLE_SENTRY=false \
             --dart-define=GIT_COMMIT="$GITHUB_SHA"
