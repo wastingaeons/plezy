@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - integration/custom-v1-android
+      - feature/mobile-global-companion-shortcut
 
 permissions:
   contents: read
