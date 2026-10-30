@@ -1,4 +1,4 @@
-# Plezy Custom Android builds (Obtainium)
+# Plezy (wastingaeons) Android builds (Obtainium)
 
 This fork publishes **raw, signed APK assets** for Android TV and Android phones.
 The GitHub Actions workflow is `.github/workflows/custom-android-apk.yml`.
@@ -7,11 +7,12 @@ The GitHub Actions workflow is `.github/workflows/custom-android-apk.yml`.
 
 | Device | Release asset |
 | --- | --- |
-| 32-bit ARM Chromecast / Android TV | `plezy-custom-armeabi-v7a.apk` |
-| 64-bit ARM Chromecast / Android TV / Android phone | `plezy-custom-arm64-v8a.apk` |
-| x86_64 emulator | `plezy-custom-x86_64.apk` |
+| 32-bit ARM Chromecast / Android TV | `plezy-wastingaeons-armeabi-v7a.apk` |
+| 64-bit ARM Chromecast / Android TV / Android phone | `plezy-wastingaeons-arm64-v8a.apk` |
+| x86_64 emulator | `plezy-wastingaeons-x86_64.apk` |
 
-The GitHub-built custom APK uses **`com.wastingaeons.plezy`**, distinct from
+The launcher name is **Plezy** (just like retail). The GitHub-built custom APK
+uses **`com.wastingaeons.plezy`**, distinct from
 upstream's `com.edde746.plezy`. It installs alongside official Plezy, with
 its own app data. Library logins, preferences, and companion-remote pairing
 do **not** automatically transfer between the two.
@@ -25,11 +26,19 @@ signing keystore and alias stable too, or Android will reject upgrades.
 > and passwords somewhere safe outside GitHub; losing them prevents seamless
 > upgrades of already-installed custom APKs.
 
-On a machine with JDK 21 (`keytool`), create a signing key **once**:
+On a Linux machine with JDK 21 (`keytool`), create a signing key **once**:
 
-```powershell
-keytool -genkeypair -keystore plezy-custom-upload.jks -alias plezy-custom -keyalg RSA -keysize 3072 -validity 10000
+```bash
+mkdir -p ~/plezy-signing
+chmod 700 ~/plezy-signing
+cd ~/plezy-signing
+umask 077
+keytool -genkeypair -keystore plezy-wastingaeons.jks -alias plezy-wastingaeons -keyalg RSA -keysize 3072 -validity 10000
 ```
+
+On Debian/Ubuntu, install `openjdk-21-jdk-headless` if `keytool` is missing.
+Modern Java may use PKCS12 internally despite the `.jks` filename; Android
+signing supports that format.
 
 Choose a strong keystore password when prompted. Use the same password for
 the key if asked, or remember both separately.
@@ -42,15 +51,17 @@ create these four **repository secrets**:
 | `ANDROID_KEYSTORE_BASE64` | Base64 of the exact `.jks` file bytes |
 | `ANDROID_STORE_PASSWORD` | Keystore password |
 | `ANDROID_KEY_PASSWORD` | Key password |
-| `ANDROID_KEY_ALIAS` | `plezy-custom` |
+| `ANDROID_KEY_ALIAS` | `plezy-wastingaeons` |
 
-To get the Base64 value from PowerShell (copies it to the clipboard):
+To get the Base64 value on Linux (copy its output privately into GitHub Secrets):
 
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes((Resolve-Path '.\plezy-custom-upload.jks').Path)) | Set-Clipboard
+```bash
+base64 -w 0 ~/plezy-signing/plezy-wastingaeons.jks
 ```
 
-Paste the clipboard into GitHub's `ANDROID_KEYSTORE_BASE64` repository secret.
+Avoid pasting the Base64 keystore or passwords into chat, issues or commits.
+
+Paste the Base64 output into GitHub's `ANDROID_KEYSTORE_BASE64` repository secret.
 Do not paste it into an issue, chat, or tracked source file. Do not create a
 fresh signing key for each build.
 
@@ -59,7 +70,7 @@ fresh signing key for each build.
 After this workflow is merged to `main`, go to
 [Actions → Custom Android APKs](https://github.com/wastingaeons/plezy/actions/workflows/custom-android-apk.yml).
 Choose **Run workflow**, leave **Publish release** unchecked, and start the run.
-After success, download the `plezy-custom-android-apks` workflow artifact.
+After success, download the `plezy-wastingaeons-android-apks` workflow artifact.
 
 This artifact is for testing. Obtainium expects a **GitHub Release**, not a
 temporary workflow artifact.
@@ -96,6 +107,8 @@ same package ID and signing key.
 
 - This workflow uses Flutter 3.47.1, matching upstream's current workflow.
 - Builds increment Android `versionCode` from GitHub's workflow run number.
+- The stable internal package ID stays `com.wastingaeons.plezy`, regardless of
+  the launcher label, file names, or release title.
 - The first successful release should be tested on a spare device before
   installing it on the regular Chromecast(s).
 - GitHub-hosted runners are ephemeral; the signing key is restored securely from
