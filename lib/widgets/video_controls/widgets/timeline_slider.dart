@@ -423,7 +423,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
         borderRadius: 8,
         autoScroll: false,
         disableScale: true,
-        focusColor: Colors.transparent,
+        // The default Plezy accent outline makes D-pad focus visible on the
+        // timeline instead of relying on the tiny focused scrubber knob.
         descendantsAreFocusable: false,
         child: slider,
       );

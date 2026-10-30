@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/focusable_wrapper.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
@@ -63,7 +64,9 @@ class SkipMarkerButton extends StatelessWidget {
       focusNode: focusNode,
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
-      useBackgroundFocus: true,
+      // The translucent focus overlay was almost invisible over white.
+      // Our accent ring is painted above the content instead.
+      focusColor: Colors.transparent,
       autoScroll: false,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
@@ -123,6 +126,28 @@ class SkipMarkerButton extends StatelessWidget {
                     ),
                   ),
                 ),
+              // Keep the accent focus outline on top of the auto-skip countdown
+              // so D-pad focus is obvious from across the room.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: focusNode,
+                    builder: (context, _) {
+                      final showFocus = focusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                          border: Border.all(
+                            color: showFocus ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ),
