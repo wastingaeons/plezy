@@ -286,6 +286,8 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
 
 android {
   namespace = "com.edde746.plezy"
+  // Generate BuildConfig so custom APKs use their own content provider authorities.
+  buildFeatures { buildConfig = true }
   compileSdk = flutter.compileSdkVersion
   buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
