@@ -30,6 +30,8 @@ typedef _RemoteNoticeState = ({
   String? skipMarker,
   String deviceName,
   bool localMusicLoaded,
+  Duration position,
+  Duration duration,
 });
 
 /// Profile-scoped Android MediaStyle notification for companion-remote video.
@@ -81,10 +83,22 @@ class _CompanionRemoteMediaNotificationState
       skipMarker: remote.remoteSkipMarker,
       deviceName: remote.connectedDevice?.name ?? 'TV',
       localMusicLoaded: localMusicLoaded,
+      position: remote.remotePosition,
+      duration: remote.remoteDuration,
     );
     if (_desired == desired) return;
     _desired = desired;
     _scheduleUpdate();
+  }
+
+  String _timeLabel(Duration value) {
+    final seconds = value.inSeconds < 0 ? 0 : value.inSeconds;
+    final minutes = (seconds ~/ 60) % 60;
+    final hours = seconds ~/ 3600;
+    final remainder = (seconds % 60).toString().padLeft(2, '0');
+    return hours > 0
+        ? '$hours:${minutes.toString().padLeft(2, '0')}:$remainder'
+        : '$minutes:$remainder';
   }
 
   void _scheduleUpdate() {
@@ -123,7 +137,10 @@ class _CompanionRemoteMediaNotificationState
     await OsMediaControls.setMetadata(
       MediaMetadata(
         title: 'Plezy on ${latest.deviceName}',
-        artist: 'Remote playback',
+        artist: latest.duration > Duration.zero
+            ? '${_timeLabel(latest.position)} / ${_timeLabel(latest.duration)} · Remote playback'
+            : 'Remote playback',
+        duration: latest.duration > Duration.zero ? latest.duration : null,
       ),
     );
     await _controls.setControlsEnabled(
@@ -136,8 +153,8 @@ class _CompanionRemoteMediaNotificationState
     _ownsSession = true;
     await _controls.updatePlaybackState(
       isPlaying: latest.playing,
-      position: Duration.zero,
-      speed: 1,
+      position: latest.position,
+      speed: latest.playing ? 1 : 0,
       force: true,
     );
   }

@@ -142,12 +142,12 @@ void main() {
       host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
 
       expect(host.sentCommands.single.type, RemoteCommandType.syncState);
-      expect(host.sentCommands.single.data, {'playerActive': true, 'playerPlaying': false});
+      expect(host.sentCommands.single.data, {'playerActive': true, 'playerPlaying': false, 'positionMs': 0, 'durationMs': 0});
 
       harness.provider.setHostPlayerActive(false);
       host.sentCommands.clear();
       host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
-      expect(host.sentCommands.single.data, {'playerActive': false, 'playerPlaying': false});
+      expect(host.sentCommands.single.data, {'playerActive': false, 'playerPlaying': false, 'positionMs': 0, 'durationMs': 0});
     });
   });
 
@@ -172,16 +172,24 @@ void main() {
         'playerActive': true,
         'playerPlaying': true,
         'skipMarker': 'intro',
+        'positionMs': 0,
+        'durationMs': 0,
       });
 
       harness.provider.setHostSkipMarker('credits');
       expect(host.sentCommands.last.data?['skipMarker'], 'credits');
+      harness.provider.setHostPlayerTimeline(
+        const Duration(minutes: 12, seconds: 34),
+        const Duration(minutes: 45),
+      );
+      expect(host.sentCommands.last.data?['positionMs'], 754000);
+      expect(host.sentCommands.last.data?['durationMs'], 2700000);
       final count = host.sentCommands.length;
       harness.provider.setHostSkipMarker('credits');
       expect(host.sentCommands.length, count);
 
       harness.provider.setHostPlayerActive(false);
-      expect(host.sentCommands.last.data, {'playerActive': false, 'playerPlaying': false});
+      expect(host.sentCommands.last.data, {'playerActive': false, 'playerPlaying': false, 'positionMs': 0, 'durationMs': 0});
     });
 
   group('CompanionRemoteProvider — dispose hygiene', () {

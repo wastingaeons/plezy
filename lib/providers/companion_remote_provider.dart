@@ -59,11 +59,17 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool _isPlayerActive = false;
   bool _isPlayerPlaying = false;
   String? _remoteSkipMarker;
+  int _remotePositionMs = 0;
+  int _remoteDurationMs = 0;
   // Whether this device's own video player is up, as last advertised to a
   // remote. Kept so a remote that pairs mid-playback is told on connect.
   bool _hostPlayerActive = false;
   bool _hostPlayerPlaying = false;
   String? _hostSkipMarker;
+  int _hostPositionMs = 0;
+  int _hostDurationMs = 0;
+  DateTime? _lastTimelinePublishedAt;
+  int _lastPublishedPositionMs = 0;
   // Listen addresses of a running host server (`ip:port`), surfaced so the
   // host UI can show what a phone's manual connection should target.
   List<String> _hostServerAddresses = const [];
@@ -131,6 +137,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool get isPlayerActive => _isPlayerActive;
   bool get isPlayerPlaying => _isPlayerPlaying;
   String? get remoteSkipMarker => _remoteSkipMarker;
+  Duration get remotePosition => Duration(milliseconds: _remotePositionMs);
+  Duration get remoteDuration => Duration(milliseconds: _remoteDurationMs);
   bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
   List<String> get hostServerAddresses => _hostServerAddresses;
 
@@ -976,18 +984,27 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
   void _handleSyncState(RemoteCommand command) {
     final active = command.data?['playerActive'] as bool? ?? false;
-    // Compatibility: older hosts only advertise whether the player is open.
+    // Older TV builds only sent playerActive.
     final playing = active && (command.data?['playerPlaying'] as bool? ?? true);
-    final marker = active ? command.data?['skipMarker'] as String? : null;
+    final marker = active ? (command.data?['skipMarker'] as String?) : null;
     final skipMarker = marker == 'intro' || marker == 'credits' ? marker : null;
+    final rawPosition = command.data?['positionMs'];
+    final rawDuration = command.data?['durationMs'];
+    final positionMs = active && rawPosition is int && rawPosition >= 0 ? rawPosition : 0;
+    final durationMs = active && rawDuration is int && rawDuration > 0 ? rawDuration : 0;
+    final clampedPosition = durationMs > 0 && positionMs > durationMs ? durationMs : positionMs;
     if (_isPlayerActive == active &&
         _isPlayerPlaying == playing &&
-        _remoteSkipMarker == skipMarker) {
+        _remoteSkipMarker == skipMarker &&
+        _remotePositionMs == clampedPosition &&
+        _remoteDurationMs == durationMs) {
       return;
     }
     _isPlayerActive = active;
     _isPlayerPlaying = playing;
     _remoteSkipMarker = skipMarker;
+    _remotePositionMs = clampedPosition;
+    _remoteDurationMs = durationMs;
     safeNotifyListeners();
   }
 
@@ -1009,6 +1026,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   Map<String, dynamic> get _hostPlaybackState => {
     'playerActive': _hostPlayerActive,
     'playerPlaying': _hostPlayerActive && _hostPlayerPlaying,
+    'positionMs': _hostPlayerActive ? _hostPositionMs : 0,
+    'durationMs': _hostPlayerActive ? _hostDurationMs : 0,
     if (_hostPlayerActive && _hostSkipMarker != null)
       'skipMarker': _hostSkipMarker,
   };
@@ -1023,6 +1042,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (!active) {
       _hostPlayerPlaying = false;
       _hostSkipMarker = null;
+      _hostPositionMs = 0;
+      _hostDurationMs = 0;
+      _lastTimelinePublishedAt = null;
+      _lastPublishedPositionMs = 0;
     }
     _publishHostPlaybackState();
   }
@@ -1037,6 +1060,28 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (marker != null && marker != 'intro' && marker != 'credits') return;
     if (_hostSkipMarker == marker) return;
     _hostSkipMarker = marker;
+    _publishHostPlaybackState();
+  }
+
+  /// Send the timeline at most every five seconds, or on a duration
+  /// change or a major seek. Android advances its own media clock between
+  /// updates without allowing the phone to seek the TV.
+  void setHostPlayerTimeline(Duration position, Duration duration) {
+    final positionMs = position.inMilliseconds < 0 ? 0 : position.inMilliseconds;
+    final durationMs = duration.inMilliseconds < 0 ? 0 : duration.inMilliseconds;
+    final now = DateTime.now();
+    final durationChanged = durationMs != _hostDurationMs;
+    final jumped = (positionMs - _lastPublishedPositionMs).abs() >= 12000;
+    _hostPositionMs = positionMs;
+    _hostDurationMs = durationMs;
+    if (!_hostPlayerActive || !isHost || !isConnected) return;
+    if (!durationChanged && !jumped &&
+        _lastTimelinePublishedAt != null &&
+        now.difference(_lastTimelinePublishedAt!) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastTimelinePublishedAt = now;
+    _lastPublishedPositionMs = positionMs;
     _publishHostPlaybackState();
   }
 
