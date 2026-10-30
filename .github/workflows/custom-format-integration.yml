@@ -29,6 +29,7 @@ jobs:
             lib/widgets/video_controls/widgets/skip_marker_button.dart \
             lib/widgets/video_controls/video_controls.dart \
             lib/widgets/video_controls/parts/markers.dart \
+            lib/widgets/video_controls/parts/visibility.dart \
             test/widgets/video_controls_tv_skip_prompt_test.dart \
             lib/widgets/video_controls/widgets/timeline_slider.dart \
             lib/widgets/video_controls/painters/buffer_range_painter.dart \
@@ -51,6 +52,7 @@ jobs:
             lib/widgets/video_controls/widgets/skip_marker_button.dart \
             lib/widgets/video_controls/video_controls.dart \
             lib/widgets/video_controls/parts/markers.dart \
+            lib/widgets/video_controls/parts/visibility.dart \
             test/widgets/video_controls_tv_skip_prompt_test.dart \
             lib/widgets/video_controls/widgets/timeline_slider.dart \
             lib/widgets/video_controls/painters/buffer_range_painter.dart \
