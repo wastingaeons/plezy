@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../media/media_item.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../navigation/profile_navigation_scope.dart';
 import '../../providers/companion_remote_provider.dart';
