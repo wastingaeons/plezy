@@ -70,13 +70,8 @@ void main() {
   });
 
   group('paired-device tap interception', () {
-    test('offers casting on movie, episode, show and season cards', () {
-      for (final kind in [
-        MediaKind.movie,
-        MediaKind.episode,
-        MediaKind.show,
-        MediaKind.season,
-      ]) {
+    test('offers casting only on individual movies and episodes', () {
+      for (final kind in [MediaKind.movie, MediaKind.episode]) {
         expect(
           shouldOfferConnectedPlayback(
             isOffline: false,
@@ -86,13 +81,19 @@ void main() {
             kind: kind,
           ),
           isTrue,
-          reason: '$kind should offer remote playback on a normal tap',
+          reason: '$kind is a single playable media item',
         );
       }
     });
 
-    test('does not offer the video-only remote command for music or clips', () {
-      for (final kind in [MediaKind.track, MediaKind.album, MediaKind.clip]) {
+    test('shows, seasons, clips and music do not trigger cast prompt', () {
+      for (final kind in [
+        MediaKind.show,
+        MediaKind.season,
+        MediaKind.track,
+        MediaKind.album,
+        MediaKind.clip,
+      ]) {
         expect(
           shouldOfferConnectedPlayback(
             isOffline: false,
