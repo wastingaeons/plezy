@@ -1,4 +1,4 @@
-# Debug APKs plus a temporary AOT release-mode Chromecast build for cold-start comparisons.
+# Debug APKs plus temporary AOT release-mode Chromecast and Pixel builds for performance comparisons.
 # All are ephemeral test builds, NOT signed Obtainium releases.
 name: Custom Android Integration Smoke Build
 
@@ -34,6 +34,10 @@ jobs:
           - label: Chromecast ARMv7 optimized AOT
             platform: android-arm
             suffix: armv7-optimized-test
+            mode: release
+          - label: Pixel ARM64 optimized AOT
+            platform: android-arm64
+            suffix: arm64-optimized-test
             mode: release
     env:
       PLEZY_CUSTOM_APPLICATION_ID: com.wastingaeons.plezy
