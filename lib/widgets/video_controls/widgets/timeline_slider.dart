@@ -460,7 +460,9 @@ class _TimelineSliderState extends State<TimelineSlider> {
                       min: 0.0,
                       max: max,
                       onChanged: _noopSliderChanged,
-                      activeColor: showFocus ? const Color(0xFFFF7E57) : Colors.white,
+                      activeColor: showFocus
+                          ? const Color(0xFFFF7E57)
+                          : Colors.white,
                       inactiveColor: Colors.transparent,
                     ),
                   ),
@@ -620,5 +622,9 @@ class _FocusKnobThumbShape extends SliderComponentShape {
     required double value,
     required double textScaleFactor,
     required Size sizeWithOverflow,
-  }) => paintPlayerFocusKnob(context.canvas, center, fillColor: const Color(0xFFFF7E57));
+  }) => paintPlayerFocusKnob(
+    context.canvas,
+    center,
+    fillColor: const Color(0xFFFF7E57),
+  );
 }

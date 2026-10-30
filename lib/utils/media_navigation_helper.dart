@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
@@ -51,7 +52,10 @@ class MediaDetailNavigationTarget {
   });
 }
 
-MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {MediaItem? metadataOverride}) {
+MediaDetailNavigationTarget mediaDetailNavigationTargetFor(
+  MediaItem item, {
+  MediaItem? metadataOverride,
+}) {
   if (item.isEpisode && item.grandparentId != null) {
     return MediaDetailNavigationTarget(
       metadata:
@@ -82,7 +86,9 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
             id: item.parentId!,
             backend: item.backend,
             kind: MediaKind.season,
-            title: item.parentTitle ?? t.common.seasonNumber(number: item.parentIndex ?? ''),
+            title:
+                item.parentTitle ??
+                t.common.seasonNumber(number: item.parentIndex ?? ''),
             index: item.parentIndex,
             thumbPath: item.parentThumbPath,
             parentId: item.grandparentId,
@@ -103,7 +109,8 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
             id: item.parentId!,
             backend: item.backend,
             kind: MediaKind.show,
-            title: item.grandparentTitle ?? item.parentTitle ?? item.displayTitle,
+            title:
+                item.grandparentTitle ?? item.parentTitle ?? item.displayTitle,
             thumbPath: item.grandparentThumbPath ?? item.parentThumbPath,
             artPath: item.grandparentArtPath,
             libraryId: item.libraryId,
@@ -124,7 +131,8 @@ bool shouldOpenEpisodeDetailsForActivation({
   required ContinueWatchingAction continueWatchingAction,
   required EpisodeAction episodeAction,
 }) {
-  if (playDirectly) return continueWatchingAction == ContinueWatchingAction.details;
+  if (playDirectly)
+    return continueWatchingAction == ContinueWatchingAction.details;
   return episodeAction == EpisodeAction.details;
 }
 
@@ -173,19 +181,23 @@ Future<CompanionPlaybackTarget> chooseConnectedPlaybackTarget(
       content: Text(item.displayTitle),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(CompanionPlaybackTarget.local),
+          onPressed: () =>
+              Navigator.of(dialogContext).pop(CompanionPlaybackTarget.local),
           child: const Text('Play Here'),
         ),
         FilledButton.icon(
           icon: const Icon(Icons.cast_rounded),
           label: const Text('Play on Connected Device'),
-          onPressed: () => Navigator.of(dialogContext).pop(CompanionPlaybackTarget.connected),
+          onPressed: () =>
+              Navigator.of(dialogContext)
+                  .pop(CompanionPlaybackTarget.connected),
         ),
       ],
     ),
   );
 
-  if (!context.mounted || choice == null) return CompanionPlaybackTarget.cancelled;
+  if (!context.mounted || choice == null)
+    return CompanionPlaybackTarget.cancelled;
   if (choice == CompanionPlaybackTarget.connected) {
     // The pairing may have disappeared while the chooser was open.
     if (remote == null || !remote.isRemote || !remote.isConnected) {
@@ -239,9 +251,13 @@ Future<MediaNavigationResult> navigateToMediaItem(
   if (item is MediaPlaylist) {
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)),
+      MaterialPageRoute(
+        builder: (context) => PlaylistDetailScreen(playlist: item),
+      ),
     );
-    return result == true ? MediaNavigationResult.listRefreshNeeded : MediaNavigationResult.navigated;
+    return result == true
+        ? MediaNavigationResult.listRefreshNeeded
+        : MediaNavigationResult.navigated;
   }
 
   if (item is! MediaItem) {
@@ -258,9 +274,13 @@ Future<MediaNavigationResult> navigateToMediaItem(
     return MediaNavigationResult.navigated;
   }
   final settings = SettingsService.instanceOrNull;
-  final continueWatchingAction = settings?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play;
-  final episodeAction = settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;
-  final shouldOpenContinueWatchingDetails = playDirectly && continueWatchingAction == ContinueWatchingAction.details;
+  final continueWatchingAction =
+      settings?.read(SettingsService.continueWatchingAction) ??
+      ContinueWatchingAction.play;
+  final episodeAction =
+      settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;
+  final shouldOpenContinueWatchingDetails =
+      playDirectly && continueWatchingAction == ContinueWatchingAction.details;
   final shouldOpenEpisodeDetails = shouldOpenEpisodeDetailsForActivation(
     playDirectly: playDirectly,
     continueWatchingAction: continueWatchingAction,
@@ -274,8 +294,14 @@ Future<MediaNavigationResult> navigateToMediaItem(
   if (rawKey is String && rawKey.startsWith('/library/sections/')) {
     final sectionId = plexLibrarySectionIdFromString(rawKey);
     if (sectionId != null && mi.serverId != null) {
-      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), '$sectionId');
-      MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
+      final libraryGlobalKey = buildGlobalKey(
+        ServerId(mi.serverId!),
+        '$sectionId',
+      );
+      MainScreenFocusScope.of(
+        context,
+        listen: false,
+      )?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }
     return MediaNavigationResult.unsupported;
@@ -283,12 +309,21 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
   // All normal media card taps share this single chooser, including library
   // movie and series cards that ordinarily open details directly.
-  final target = await chooseConnectedPlaybackTarget(context, mi, isOffline: isOffline);
+  final target = await chooseConnectedPlaybackTarget(
+    context,
+    mi,
+    isOffline: isOffline,
+  );
   if (target == CompanionPlaybackTarget.cancelled || !context.mounted) {
     return MediaNavigationResult.navigated;
   }
   if (target == CompanionPlaybackTarget.connected) {
-    return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
+    return navigateToMediaItemDetails(
+      context,
+      mi,
+      onRefresh: onRefresh,
+      isOffline: isOffline,
+    );
   }
 
   switch (mi.kind) {
@@ -296,7 +331,8 @@ Future<MediaNavigationResult> navigateToMediaItem(
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (context) => CollectionDetailScreen(collection: mi, isOffline: isOffline),
+          builder: (context) =>
+              CollectionDetailScreen(collection: mi, isOffline: isOffline),
         ),
       );
       // If collection was deleted, signal that list refresh is needed
@@ -322,9 +358,18 @@ Future<MediaNavigationResult> navigateToMediaItem(
     case MediaKind.clip:
     case MediaKind.episode:
       if (mi.kind == MediaKind.episode && shouldOpenEpisodeDetails) {
-        return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
+        return navigateToMediaItemDetails(
+          context,
+          mi,
+          onRefresh: onRefresh,
+          isOffline: isOffline,
+        );
       }
-      final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
+      final result = await navigateToVideoPlayer(
+        context,
+        metadata: mi,
+        isOffline: isOffline,
+      );
       if (result == true && context.mounted) {
         onRefresh?.call(mi);
       }
@@ -332,19 +377,38 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.movie:
       if (playDirectly && !shouldOpenContinueWatchingDetails) {
-        final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
+        final result = await navigateToVideoPlayer(
+          context,
+          metadata: mi,
+          isOffline: isOffline,
+        );
         if (result == true && context.mounted) {
           onRefresh?.call(mi);
         }
         return MediaNavigationResult.navigated;
       }
-      return navigateToMediaItemDetails(context, mi, isOffline: isOffline, onRefresh: onRefresh);
+      return navigateToMediaItemDetails(
+        context,
+        mi,
+        isOffline: isOffline,
+        onRefresh: onRefresh,
+      );
 
     case MediaKind.season:
-      return navigateToMediaItemDetails(context, mi, isOffline: isOffline, onRefresh: onRefresh);
+      return navigateToMediaItemDetails(
+        context,
+        mi,
+        isOffline: isOffline,
+        onRefresh: onRefresh,
+      );
 
     default:
-      return navigateToMediaItemDetails(context, mi, isOffline: isOffline, onRefresh: onRefresh);
+      return navigateToMediaItemDetails(
+        context,
+        mi,
+        isOffline: isOffline,
+        onRefresh: onRefresh,
+      );
   }
 }
 
@@ -365,7 +429,10 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
     return MediaNavigationResult.navigated;
   }
 
-  final target = mediaDetailNavigationTargetFor(mi, metadataOverride: metadataOverride);
+  final target = mediaDetailNavigationTargetFor(
+    mi,
+    metadataOverride: metadataOverride,
+  );
   final result = await Navigator.push<bool>(
     context,
     mediaDetailRoute(

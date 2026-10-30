@@ -476,11 +476,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (!context.mounted) return;
     final deviceName = remote.connectedDevice?.name ?? 'connected device';
     showAppSnackBar(context, 'Sent to $deviceName');
-    await navigateToMediaItemDetails(
-      context,
-      item,
-      onRefresh: _notifyRefresh,
-    );
+    await navigateToMediaItemDetails(context, item, onRefresh: _notifyRefresh);
   }
 
   void _showContextMenu(BuildContext context) async {

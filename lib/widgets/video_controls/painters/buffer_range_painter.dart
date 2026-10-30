@@ -12,7 +12,12 @@ class BufferRangePainter extends CustomPainter {
   final List<MediaChapter> chapters;
   final bool focused;
 
-  BufferRangePainter({required this.ranges, required this.duration, this.chapters = const [], this.focused = false});
+  BufferRangePainter({
+    required this.ranges,
+    required this.duration,
+    this.chapters = const [],
+    this.focused = false,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -22,7 +27,9 @@ class BufferRangePainter extends CustomPainter {
     final y = (size.height - trackHeight) / 2;
 
     final bgPaint = Paint()
-      ..color = focused ? const Color(0xFF873116) : Colors.white.withValues(alpha: 0.3)
+      ..color = focused
+          ? const Color(0xFF873116)
+          : Colors.white.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
     final durationMs = duration.inMilliseconds.toDouble();
@@ -43,13 +50,18 @@ class BufferRangePainter extends CustomPainter {
     final segments = <(double, double)>[];
     for (int i = 0; i < segmentEdges.length - 1; i++) {
       final left = segmentEdges[i] * size.width + (i > 0 ? gapWidth / 2 : 0);
-      final right = segmentEdges[i + 1] * size.width - (i < segmentEdges.length - 2 ? gapWidth / 2 : 0);
+      final right =
+          segmentEdges[i + 1] * size.width -
+          (i < segmentEdges.length - 2 ? gapWidth / 2 : 0);
       if (right > left) segments.add((left, right));
     }
 
     for (final (left, right) in segments) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(left, y, right - left, trackHeight), Radius.circular(radius)),
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(left, y, right - left, trackHeight),
+          Radius.circular(radius),
+        ),
         bgPaint,
       );
     }
@@ -57,12 +69,17 @@ class BufferRangePainter extends CustomPainter {
     if (durationMs <= 0) return;
 
     final bufPaint = Paint()
-      ..color = focused ? const Color(0xFFBE5632) : Colors.white.withValues(alpha: 0.5)
+      ..color = focused
+          ? const Color(0xFFBE5632)
+          : Colors.white.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
     for (final range in ranges) {
-      final bufLeft = (range.start.inMilliseconds / durationMs).clamp(0.0, 1.0) * size.width;
-      final bufRight = (range.end.inMilliseconds / durationMs).clamp(0.0, 1.0) * size.width;
+      final bufLeft =
+          (range.start.inMilliseconds / durationMs).clamp(0.0, 1.0) *
+          size.width;
+      final bufRight =
+          (range.end.inMilliseconds / durationMs).clamp(0.0, 1.0) * size.width;
       if (bufRight <= bufLeft) continue;
 
       // Clip buffer to each segment it overlaps
@@ -72,7 +89,12 @@ class BufferRangePainter extends CustomPainter {
         if (clippedRight <= clippedLeft) continue;
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(clippedLeft, y, clippedRight - clippedLeft, trackHeight),
+            Rect.fromLTWH(
+              clippedLeft,
+              y,
+              clippedRight - clippedLeft,
+              trackHeight,
+            ),
             Radius.circular(radius),
           ),
           bufPaint,
@@ -89,11 +111,15 @@ class BufferRangePainter extends CustomPainter {
         !_chapterSplitsEqual(oldDelegate.chapters, chapters);
   }
 
-  static bool _chapterSplitsEqual(List<MediaChapter> previous, List<MediaChapter> current) {
+  static bool _chapterSplitsEqual(
+    List<MediaChapter> previous,
+    List<MediaChapter> current,
+  ) {
     if (identical(previous, current)) return true;
     if (previous.length != current.length) return false;
     for (var i = 0; i < previous.length; i++) {
-      if (previous[i].startTimeOffset != current[i].startTimeOffset) return false;
+      if (previous[i].startTimeOffset != current[i].startTimeOffset)
+        return false;
     }
     return true;
   }

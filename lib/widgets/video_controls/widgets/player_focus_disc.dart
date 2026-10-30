@@ -51,29 +51,45 @@ class PlayerFocusDisc extends StatelessWidget {
       decoration: BoxDecoration(
         shape: borderRadius == null ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: borderRadius,
-        color: showFocus ? (isActive ? _activeFill : _fill) : Colors.transparent,
+        color: showFocus
+            ? (isActive ? _activeFill : _fill)
+            : Colors.transparent,
         boxShadow: showFocus ? const [playerFocusShadow] : const [],
       ),
-      child: builder(context, showFocus ? Colors.black.withValues(alpha: iconColor.a) : iconColor),
+      child: builder(
+        context,
+        showFocus ? Colors.black.withValues(alpha: iconColor.a) : iconColor,
+      ),
     );
   }
 }
 
 /// Drop shadow that separates focused player chrome from a bright frame.
-const BoxShadow playerFocusShadow = BoxShadow(color: Color(0x59000000), blurRadius: 14, offset: Offset(0, 4));
+const BoxShadow playerFocusShadow = BoxShadow(
+  color: Color(0x59000000),
+  blurRadius: 14,
+  offset: Offset(0, 4),
+);
 
 /// Radius of the knob a focused timeline shows in place of its handle.
 const double playerFocusKnobRadius = 9;
 
 /// Paints the focused-timeline knob: a white disc with the same shadow as
 /// [PlayerFocusDisc], shared by the VOD slider thumb and the live-TV painter.
-void paintPlayerFocusKnob(Canvas canvas, Offset center, {Color fillColor = Colors.white}) {
+void paintPlayerFocusKnob(
+  Canvas canvas,
+  Offset center, {
+  Color fillColor = Colors.white,
+}) {
   canvas.drawCircle(
     center + playerFocusShadow.offset / 2,
     playerFocusKnobRadius,
     Paint()
       ..color = playerFocusShadow.color
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, playerFocusShadow.blurSigma),
+      ..maskFilter = MaskFilter.blur(
+        BlurStyle.normal,
+        playerFocusShadow.blurSigma,
+      ),
   );
   canvas.drawCircle(center, playerFocusKnobRadius, Paint()..color = fillColor);
 }

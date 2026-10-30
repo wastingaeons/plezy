@@ -100,43 +100,47 @@ class SkipMarkerButton extends StatelessWidget {
                       focusNode.hasFocus &&
                       InputModeTracker.isKeyboardMode(context);
                   return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                padding: EdgeInsets.symmetric(
-                  horizontal: compact ? 10 : 16,
-                  vertical: compact ? 7 : 12,
-                ),
-                decoration: BoxDecoration(
-                  color: focused ? const Color(0xFFFF7E57) : Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOut,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 10 : 16,
+                      vertical: compact ? 7 : 12,
                     ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: .min,
-                  children: [
-                    Text(
-                      buttonText,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: compact ? 13 : 16,
-                        fontWeight: .w600,
+                    decoration: BoxDecoration(
+                      color: focused
+                          ? const Color(0xFFFF7E57)
+                          : Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(
+                        tokens(context).radiusSm,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: compact ? 5 : 8),
-                    AppIcon(
-                      buttonIcon,
-                      fill: 1,
-                      color: Colors.black,
-                      size: compact ? 16 : 20,
+                    child: Row(
+                      mainAxisSize: .min,
+                      children: [
+                        Text(
+                          buttonText,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: compact ? 13 : 16,
+                            fontWeight: .w600,
+                          ),
+                        ),
+                        SizedBox(width: compact ? 5 : 8),
+                        AppIcon(
+                          buttonIcon,
+                          fill: 1,
+                          color: Colors.black,
+                          size: compact ? 16 : 20,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
                   );
                 },
               ),
