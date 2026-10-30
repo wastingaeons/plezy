@@ -14,6 +14,8 @@ class SkipMarkerButton extends StatelessWidget {
   final bool hasNextEpisode;
   final bool isAutoSkipActive;
   final bool shouldShowAutoSkip;
+  /// TV-only unobtrusive presentation after the initial 12-second window.
+  final bool compact;
   final int autoSkipDelay;
   final double autoSkipProgress;
   final FocusNode focusNode;
@@ -27,6 +29,7 @@ class SkipMarkerButton extends StatelessWidget {
     required this.hasNextEpisode,
     required this.isAutoSkipActive,
     required this.shouldShowAutoSkip,
+    this.compact = false,
     required this.autoSkipDelay,
     required this.autoSkipProgress,
     required this.focusNode,
@@ -79,8 +82,13 @@ class SkipMarkerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 10 : 16,
+                  vertical: compact ? 7 : 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
@@ -93,10 +101,10 @@ class SkipMarkerButton extends StatelessWidget {
                   children: [
                     Text(
                       buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: .w600),
+                      style: TextStyle(color: Colors.black, fontSize: compact ? 13 : 16, fontWeight: .w600),
                     ),
-                    const SizedBox(width: 8),
-                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                    SizedBox(width: compact ? 5 : 8),
+                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: compact ? 16 : 20),
                   ],
                 ),
               ),
