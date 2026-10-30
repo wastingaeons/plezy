@@ -44,6 +44,9 @@ class CompanionRemoteReceiver {
   VoidCallback? onAudioTracks;
   VoidCallback? onFullscreen;
   void Function(RemoteCommandType type)? onSkipMarker;
+  VoidCallback? onPlayRequested;
+  VoidCallback? onPauseRequested;
+  VoidCallback? onTogglePlayPauseRequested;
 
   /// The live music session's transport, installed by the session for its
   /// lifetime; returns whether it acted on the command. Transport commands go
@@ -86,11 +89,23 @@ class CompanionRemoteReceiver {
         simulateKeyPress(LogicalKeyboardKey.contextMenu);
 
       case RemoteCommandType.play:
-        simulateKeyPress(LogicalKeyboardKey.space);
+        if (onPlayRequested != null) {
+          onPlayRequested!();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.space);
+        }
       case RemoteCommandType.pause:
-        simulateKeyPress(LogicalKeyboardKey.space);
+        if (onPauseRequested != null) {
+          onPauseRequested!();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.space);
+        }
       case RemoteCommandType.playPause:
-        simulateKeyPress(LogicalKeyboardKey.space);
+        if (onTogglePlayPauseRequested != null) {
+          onTogglePlayPauseRequested!();
+        } else {
+          simulateKeyPress(LogicalKeyboardKey.space);
+        }
       case RemoteCommandType.skipIntro:
       case RemoteCommandType.skipCredits:
         onSkipMarker?.call(command.type);

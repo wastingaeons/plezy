@@ -1027,6 +1027,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     onCycleSubtitles: () => _cycleSubtitleTrack(),
     onCycleAudio: () => _cycleAudioTrack(),
     onHome: () => _handleHomeButton(),
+    onTransport: (command) => _remoteTransport(command, source: 'Companion remote'),
     readProvider: () => context.read<CompanionRemoteProvider>(),
   );
 

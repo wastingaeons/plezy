@@ -149,7 +149,11 @@ class _CompanionRemoteMediaNotificationState
         !remote.isRemote || !remote.isConnected || !remote.isPlayerActive) {
       return;
     }
-    if (event is PlayEvent || event is PauseEvent || event is TogglePlayPauseEvent) {
+    if (event is PlayEvent) {
+      remote.sendCommand(RemoteCommandType.play);
+    } else if (event is PauseEvent) {
+      remote.sendCommand(RemoteCommandType.pause);
+    } else if (event is TogglePlayPauseEvent) {
       remote.sendCommand(RemoteCommandType.playPause);
     } else if (event is NextTrackEvent) {
       // Avoid blind Select/Enter: it toggles playback when no skip is focused.

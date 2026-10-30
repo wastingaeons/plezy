@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../../focus/transport_keys.dart';
+
 import 'package:flutter/foundation.dart';
 
 import '../../mpv/mpv.dart';
@@ -34,6 +36,7 @@ class CompanionRemoteBinding {
     required this._onCycleSubtitles,
     required this._onCycleAudio,
     required this._onHome,
+    required this._onTransport,
     required this._readProvider,
   });
 
@@ -49,6 +52,7 @@ class CompanionRemoteBinding {
   final void Function() _onCycleSubtitles;
   final void Function() _onCycleAudio;
   final void Function() _onHome;
+  final Future<void> Function(TransportCommand command) _onTransport;
   final CompanionRemoteProvider Function() _readProvider;
 
   CompanionRemoteProvider? _provider;
@@ -84,6 +88,9 @@ class CompanionRemoteBinding {
       if (_canControlPlayback()) _onCycleAudio();
     };
     receiver.onFullscreen = _toggleFullscreen;
+    receiver.onPlayRequested = () => _dispatchTransport(TransportCommand.play);
+    receiver.onPauseRequested = () => _dispatchTransport(TransportCommand.pause);
+    receiver.onTogglePlayPauseRequested = () => _dispatchTransport(TransportCommand.toggle);
 
     // Override home to exit the player first. Replacements inherit the base
     // MainScreen callback rather than chaining through the outgoing player.
@@ -100,6 +107,11 @@ class CompanionRemoteBinding {
     } catch (e) {
       appLogger.d('CompanionRemote provider unavailable', error: e);
     }
+  }
+
+  void _dispatchTransport(TransportCommand command) {
+    if (!_isMounted() || !_canControlPlayback()) return;
+    unawaited(_onTransport(command));
   }
 
   void setPlaying(bool playing) => _provider?.setHostPlayerPlaying(playing);
@@ -155,6 +167,9 @@ class CompanionRemoteBinding {
     receiver.onSubtitles = null;
     receiver.onAudioTracks = null;
     receiver.onFullscreen = null;
+    receiver.onPlayRequested = null;
+    receiver.onPauseRequested = null;
+    receiver.onTogglePlayPauseRequested = null;
     receiver.onHome = receiver.playerHomeFallback;
     receiver.playerHomeFallback = null;
     receiver.playerOwner = null;
