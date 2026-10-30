@@ -301,7 +301,11 @@ android {
   }
 
   defaultConfig {
-    applicationId = "com.edde746.plezy"
+    // Set only in our GitHub Actions build. Keep upstream's package ID for
+    // ordinary local builds and upstream compatibility.
+    applicationId = System.getenv("PLEZY_CUSTOM_APPLICATION_ID") ?: "com.edde746.plezy"
+    manifestPlaceholders["plezyAppLabel"] =
+      if (System.getenv("PLEZY_CUSTOM_APPLICATION_ID") != null) "Plezy Custom" else "Plezy"
     minSdk = 25 // Fire OS 6.x (API 25); the mpv-android AAR shares the same floor
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
