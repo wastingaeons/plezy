@@ -15,6 +15,7 @@ on:
   push:
     branches:
       - "feature/mobile-global-companion-shortcut"
+      - "release/plezy-v1-signed-candidate"
     tags:
       - "custom-v*"
 
