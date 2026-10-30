@@ -35,6 +35,8 @@ jobs:
             lib/widgets/media_context_menu.dart \
             lib/widgets/media_card.dart \
             lib/screens/media_detail_screen.dart \
+            lib/screens/companion_remote/mobile_remote_screen.dart \
+            test/screens/companion_remote/mobile_remote_return_test.dart \
             lib/utils/media_navigation_helper.dart \
             test/utils/media_navigation_helper_test.dart \
             test/widgets/video_controls/buffer_range_focus_test.dart
@@ -52,6 +54,8 @@ jobs:
             lib/widgets/media_context_menu.dart \
             lib/widgets/media_card.dart \
             lib/screens/media_detail_screen.dart \
+            lib/screens/companion_remote/mobile_remote_screen.dart \
+            test/screens/companion_remote/mobile_remote_return_test.dart \
             lib/utils/media_navigation_helper.dart \
             test/utils/media_navigation_helper_test.dart \
             test/widgets/video_controls/buffer_range_focus_test.dart
