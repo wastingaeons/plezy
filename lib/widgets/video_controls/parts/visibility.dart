@@ -310,7 +310,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
         _controlsOpaque = false;
         if (controlsDismissed) _controlsMounted = false;
         if (_currentMarker != null &&
-            shouldDismissSkipMarkerOnChromeHide(isTv: isTv, isMobile: isMobile)) {
+            shouldDismissSkipMarkerOnChromeHide(
+              isTv: isTv,
+              isMobile: isMobile,
+            )) {
           _skipButtonDismissed = true;
         }
       });
