@@ -43,6 +43,7 @@ class CompanionRemoteReceiver {
   VoidCallback? onSubtitles;
   VoidCallback? onAudioTracks;
   VoidCallback? onFullscreen;
+  void Function(RemoteCommandType type)? onSkipMarker;
 
   /// The live music session's transport, installed by the session for its
   /// lifetime; returns whether it acted on the command. Transport commands go
@@ -90,6 +91,9 @@ class CompanionRemoteReceiver {
         simulateKeyPress(LogicalKeyboardKey.space);
       case RemoteCommandType.playPause:
         simulateKeyPress(LogicalKeyboardKey.space);
+      case RemoteCommandType.skipIntro:
+      case RemoteCommandType.skipCredits:
+        onSkipMarker?.call(command.type);
       case RemoteCommandType.seekForward:
         onSeekForward?.call();
       case RemoteCommandType.seekBackward:

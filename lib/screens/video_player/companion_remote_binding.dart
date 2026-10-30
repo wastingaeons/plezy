@@ -96,10 +96,15 @@ class CompanionRemoteBinding {
     try {
       _provider = _readProvider();
       _provider!.setHostPlayerActive(true);
+      _provider!.setHostPlayerPlaying(_player()?.state.isActive ?? false);
     } catch (e) {
       appLogger.d('CompanionRemote provider unavailable', error: e);
     }
   }
+
+  void setPlaying(bool playing) => _provider?.setHostPlayerPlaying(playing);
+
+  void setSkipMarker(String? marker) => _provider?.setHostSkipMarker(marker);
 
   void _dispatchSeek({required bool forward}) {
     final currentPlayer = _player();

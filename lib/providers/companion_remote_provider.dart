@@ -57,9 +57,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String _deviceName = t.companionRemote.unknownDevice;
   String _platform = 'unknown';
   bool _isPlayerActive = false;
+  bool _isPlayerPlaying = false;
+  String? _remoteSkipMarker;
   // Whether this device's own video player is up, as last advertised to a
   // remote. Kept so a remote that pairs mid-playback is told on connect.
   bool _hostPlayerActive = false;
+  bool _hostPlayerPlaying = false;
+  String? _hostSkipMarker;
   // Listen addresses of a running host server (`ip:port`), surfaced so the
   // host UI can show what a phone's manual connection should target.
   List<String> _hostServerAddresses = const [];
@@ -125,6 +129,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   RemoteSessionStatus get status => _session?.status ?? RemoteSessionStatus.disconnected;
   RemoteDevice? get connectedDevice => _session?.connectedDevice;
   bool get isPlayerActive => _isPlayerActive;
+  bool get isPlayerPlaying => _isPlayerPlaying;
+  String? get remoteSkipMarker => _remoteSkipMarker;
   bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
   List<String> get hostServerAddresses => _hostServerAddresses;
 
@@ -898,7 +904,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       // browse controls over a running player, or the player controls after
       // it closed while the remote was away.
       if (isHost) {
-        peer.sendCommand(RemoteCommand(type: RemoteCommandType.syncState, data: {'playerActive': _hostPlayerActive}));
+        peer.sendCommand(RemoteCommand(type: RemoteCommandType.syncState, data: _hostPlaybackState));
       }
     });
 
@@ -969,11 +975,20 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   void _handleSyncState(RemoteCommand command) {
-    final playerActive = command.data?['playerActive'] as bool? ?? false;
-    if (_isPlayerActive != playerActive) {
-      _isPlayerActive = playerActive;
-      safeNotifyListeners();
+    final active = command.data?['playerActive'] as bool? ?? false;
+    // Compatibility: older hosts only advertise whether the player is open.
+    final playing = active && (command.data?['playerPlaying'] as bool? ?? true);
+    final marker = active ? command.data?['skipMarker'] as String? : null;
+    final skipMarker = marker == 'intro' || marker == 'credits' ? marker : null;
+    if (_isPlayerActive == active &&
+        _isPlayerPlaying == playing &&
+        _remoteSkipMarker == skipMarker) {
+      return;
     }
+    _isPlayerActive = active;
+    _isPlayerPlaying = playing;
+    _remoteSkipMarker = skipMarker;
+    safeNotifyListeners();
   }
 
   void _cleanupSubscriptions() {
@@ -989,12 +1004,40 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _statusSubscription = null;
   }
 
-  /// Advertise whether this device's video player is up to the connected
-  /// remote, and remember it for a remote that connects later.
+  /// Send a full snapshot on connect and only changes during playback.
+  /// The marker is an optional protocol field; older clients ignore it.
+  Map<String, dynamic> get _hostPlaybackState => {
+    'playerActive': _hostPlayerActive,
+    'playerPlaying': _hostPlayerActive && _hostPlayerPlaying,
+    if (_hostPlayerActive && _hostSkipMarker != null)
+      'skipMarker': _hostSkipMarker,
+  };
+
+  void _publishHostPlaybackState() {
+    if (!isHost || _peerService == null || !isConnected) return;
+    sendCommand(RemoteCommandType.syncState, data: _hostPlaybackState);
+  }
+
   void setHostPlayerActive(bool active) {
     _hostPlayerActive = active;
-    if (_peerService == null || !isConnected) return;
-    sendCommand(RemoteCommandType.syncState, data: {'playerActive': active});
+    if (!active) {
+      _hostPlayerPlaying = false;
+      _hostSkipMarker = null;
+    }
+    _publishHostPlaybackState();
+  }
+
+  void setHostPlayerPlaying(bool playing) {
+    if (_hostPlayerPlaying == playing) return;
+    _hostPlayerPlaying = playing;
+    _publishHostPlaybackState();
+  }
+
+  void setHostSkipMarker(String? marker) {
+    if (marker != null && marker != 'intro' && marker != 'credits') return;
+    if (_hostSkipMarker == marker) return;
+    _hostSkipMarker = marker;
+    _publishHostPlaybackState();
   }
 
   void sendCommand(RemoteCommandType type, {Map<String, dynamic>? data}) {

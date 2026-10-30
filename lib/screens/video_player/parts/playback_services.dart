@@ -761,6 +761,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
+    _companionRemote.setPlaying(isPlaying);
     if (!isPlaying) {
       _lastPlaybackPauseAt = DateTime.now();
     }
