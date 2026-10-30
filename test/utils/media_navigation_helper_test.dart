@@ -60,6 +60,39 @@ void main() {
     expect(target.initialEpisodeId, isNull);
   });
 
+  group('paired-device tap interception', () {
+    test('offers a playback location only for connected remote playback', () {
+      expect(
+        shouldOfferConnectedPlayback(
+          isOffline: false,
+          isRemote: true,
+          isConnected: true,
+          serverId: 'server-1',
+        ),
+        isTrue,
+      );
+    });
+
+    test('never interrupts unpaired, offline or serverless activation', () {
+      for (final state in [
+        (isOffline: false, isRemote: false, isConnected: true, serverId: 'server-1'),
+        (isOffline: false, isRemote: true, isConnected: false, serverId: 'server-1'),
+        (isOffline: true, isRemote: true, isConnected: true, serverId: 'server-1'),
+        (isOffline: false, isRemote: true, isConnected: true, serverId: null),
+      ]) {
+        expect(
+          shouldOfferConnectedPlayback(
+            isOffline: state.isOffline,
+            isRemote: state.isRemote,
+            isConnected: state.isConnected,
+            serverId: state.serverId,
+          ),
+          isFalse,
+        );
+      }
+    });
+  });
+
   group('episode activation details decision', () {
     test('normal activation uses the episode action setting', () {
       expect(
