@@ -2983,7 +2983,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               );
               return;
             }
-            if (target != CompanionPlaybackTarget.local) return;
+            if (target != CompanionPlaybackTarget.local &&
+                target != CompanionPlaybackTarget.original) {
+              return;
+            }
             await navigateToVideoPlayerWithRefresh(
               context,
               metadata: episode,
