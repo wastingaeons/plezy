@@ -285,6 +285,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         _eofRecovery.onPositionAdvanced(position.inMilliseconds);
 
         final duration = activePlayer.state.duration;
+        // The initial playing=true transition may predate our stream
+        // subscription on Android; each position tick reconciles the real
+        // player snapshot so remote Play/Pause cannot stick on Play.
+        _companionRemote.setPlaying(activePlayer.state.isActive);
+        _companionRemote.setTimeline(position, duration);
         _episode.completionLatch.classifyPosition(
           positionMs: position.inMilliseconds,
           durationMs: duration.inMilliseconds,
@@ -459,6 +464,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// poster synchronously inside `setMetadata` (~270 ms); the controls
   /// populate a beat after first frame which is fine.
   void _publishMediaControlsMetadata(MediaItem metadata, MediaServerClient? mediaClient) {
+    _companionRemote.setNowPlaying(
+      metadata.displayTitle,
+      subtitle: metadata.displaySubtitle,
+      artworkPath: metadata.thumbPath,
+      artworkServerId: metadata.serverId,
+    );
     final mediaControlsManager = _mediaControlsManager;
     if (mediaControlsManager == null) return;
     unawaited(
@@ -761,6 +772,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
+    _companionRemote.setPlaying(isPlaying);
     if (!isPlaying) {
       _lastPlaybackPauseAt = DateTime.now();
     }

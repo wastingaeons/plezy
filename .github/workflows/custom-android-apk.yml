@@ -16,6 +16,7 @@ on:
     branches:
       - "feature/mobile-global-companion-shortcut"
       - "release/plezy-v1-signed-candidate"
+      - "feature/android-companion-media-notification"
     tags:
       - "custom-v*"
 

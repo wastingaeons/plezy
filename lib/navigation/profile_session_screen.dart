@@ -40,6 +40,7 @@ import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/watch_together.dart' show WatchNoticeListener;
 import '../widgets/music/mini_player.dart';
 import '../widgets/companion_remote/mobile_remote_shortcut.dart';
+import '../widgets/companion_remote/companion_remote_mini_player.dart';
 import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
 import 'settings_shortcut.dart';
@@ -407,6 +408,11 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
                     onGenerateRoute: _onGenerateRoute,
                   ),
                   const Positioned.fill(child: MusicMiniPlayerOverlay()),
+                  // Remote video playback mini-player: floats above the
+                  // mobile tab bar, without creating an Android notification.
+                  CompanionRemoteMiniPlayerOverlay(
+                    routeVisible: _mobileRemoteShortcutRouteObserver.isVisible,
+                  ),
                   // One phone-only shortcut for every content route. It sits
                   // below the app bar to avoid intercepting normal page actions.
                   // The observer hides it on playback, the remote itself and

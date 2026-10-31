@@ -142,14 +142,66 @@ void main() {
       host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
 
       expect(host.sentCommands.single.type, RemoteCommandType.syncState);
-      expect(host.sentCommands.single.data, {'playerActive': true});
+      expect(host.sentCommands.single.data, {'playerActive': true, 'playerPlaying': false, 'positionMs': 0, 'durationMs': 0});
 
       harness.provider.setHostPlayerActive(false);
       host.sentCommands.clear();
       host.emitDeviceConnected(RemoteDevice(id: 'phone', name: 'Phone', platform: 'ios', connectedAt: DateTime(2026)));
-      expect(host.sentCommands.single.data, {'playerActive': false});
+      expect(host.sentCommands.single.data, {'playerActive': false, 'playerPlaying': false, 'positionMs': 0, 'durationMs': 0});
     });
   });
+
+
+    test('host publishes playing and marker changes, then clears both on exit', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+      await harness.provider.startHostServer();
+      host.emitDeviceConnected(
+        RemoteDevice(id: 'phone', name: 'Phone', platform: 'android', connectedAt: DateTime(2026)),
+      );
+      host.sentCommands.clear();
+
+      harness.provider.setHostPlayerActive(true);
+      harness.provider.setHostPlayerPlaying(true);
+      harness.provider.setHostSkipMarker('intro');
+      expect(host.sentCommands.last.data, {
+        'playerActive': true,
+        'playerPlaying': true,
+        'skipMarker': 'intro',
+        'positionMs': 0,
+        'durationMs': 0,
+      });
+
+      harness.provider.setHostSkipMarker('credits');
+      expect(host.sentCommands.last.data?['skipMarker'], 'credits');
+      harness.provider.setHostNowPlaying('My Favorite Show', subtitle: 'Episode 3');
+      expect(host.sentCommands.last.data?['mediaTitle'], 'My Favorite Show');
+      expect(host.sentCommands.last.data?['mediaSubtitle'], 'Episode 3');
+      harness.provider.setHostNowPlaying(
+        'My Favorite Show',
+        subtitle: 'Episode 3',
+        artworkPath: '/library/metadata/123/thumb/456',
+        artworkServerId: 'server-1',
+      );
+      expect(host.sentCommands.last.data?['artworkPath'], '/library/metadata/123/thumb/456');
+      expect(host.sentCommands.last.data?['artworkServerId'], 'server-1');
+      harness.provider.setHostPlayerTimeline(
+        const Duration(minutes: 12, seconds: 34),
+        const Duration(minutes: 45),
+      );
+      expect(host.sentCommands.last.data?['positionMs'], 754000);
+      expect(host.sentCommands.last.data?['durationMs'], 2700000);
+      final count = host.sentCommands.length;
+      harness.provider.setHostSkipMarker('credits');
+      expect(host.sentCommands.length, count);
+
+      harness.provider.setHostPlayerActive(false);
+      expect(host.sentCommands.last.data, {'playerActive': false, 'playerPlaying': false, 'positionMs': 0, 'durationMs': 0});
+    });
 
   group('CompanionRemoteProvider — dispose hygiene', () {
     test('cancelReconnect on a fresh provider does not throw', () {

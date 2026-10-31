@@ -57,9 +57,27 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   String _deviceName = t.companionRemote.unknownDevice;
   String _platform = 'unknown';
   bool _isPlayerActive = false;
+  bool _isPlayerPlaying = false;
+  String? _remoteSkipMarker;
+  String? _remoteMediaTitle;
+  String? _remoteMediaSubtitle;
+  String? _remoteArtworkPath;
+  String? _remoteArtworkServerId;
+  int _remotePositionMs = 0;
+  int _remoteDurationMs = 0;
   // Whether this device's own video player is up, as last advertised to a
   // remote. Kept so a remote that pairs mid-playback is told on connect.
   bool _hostPlayerActive = false;
+  bool _hostPlayerPlaying = false;
+  String? _hostSkipMarker;
+  String? _hostMediaTitle;
+  String? _hostMediaSubtitle;
+  String? _hostArtworkPath;
+  String? _hostArtworkServerId;
+  int _hostPositionMs = 0;
+  int _hostDurationMs = 0;
+  DateTime? _lastTimelinePublishedAt;
+  int _lastPublishedPositionMs = 0;
   // Listen addresses of a running host server (`ip:port`), surfaced so the
   // host UI can show what a phone's manual connection should target.
   List<String> _hostServerAddresses = const [];
@@ -125,6 +143,14 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   RemoteSessionStatus get status => _session?.status ?? RemoteSessionStatus.disconnected;
   RemoteDevice? get connectedDevice => _session?.connectedDevice;
   bool get isPlayerActive => _isPlayerActive;
+  bool get isPlayerPlaying => _isPlayerPlaying;
+  String? get remoteSkipMarker => _remoteSkipMarker;
+  String? get remoteMediaTitle => _remoteMediaTitle;
+  String? get remoteMediaSubtitle => _remoteMediaSubtitle;
+  String? get remoteArtworkPath => _remoteArtworkPath;
+  String? get remoteArtworkServerId => _remoteArtworkServerId;
+  Duration get remotePosition => Duration(milliseconds: _remotePositionMs);
+  Duration get remoteDuration => Duration(milliseconds: _remoteDurationMs);
   bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
   List<String> get hostServerAddresses => _hostServerAddresses;
 
@@ -898,7 +924,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       // browse controls over a running player, or the player controls after
       // it closed while the remote was away.
       if (isHost) {
-        peer.sendCommand(RemoteCommand(type: RemoteCommandType.syncState, data: {'playerActive': _hostPlayerActive}));
+        peer.sendCommand(RemoteCommand(type: RemoteCommandType.syncState, data: _hostPlaybackState));
       }
     });
 
@@ -969,11 +995,41 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   void _handleSyncState(RemoteCommand command) {
-    final playerActive = command.data?['playerActive'] as bool? ?? false;
-    if (_isPlayerActive != playerActive) {
-      _isPlayerActive = playerActive;
-      safeNotifyListeners();
+    final active = command.data?['playerActive'] as bool? ?? false;
+    // Older TV builds only sent playerActive.
+    final playing = active && (command.data?['playerPlaying'] as bool? ?? true);
+    final marker = active ? (command.data?['skipMarker'] as String?) : null;
+    final skipMarker = marker == 'intro' || marker == 'credits' ? marker : null;
+    final title = active ? (command.data?['mediaTitle'] as String?) : null;
+    final subtitle = active ? (command.data?['mediaSubtitle'] as String?) : null;
+    final artworkPath = active ? (command.data?['artworkPath'] as String?) : null;
+    final artworkServerId = active ? (command.data?['artworkServerId'] as String?) : null;
+    final rawPosition = command.data?['positionMs'];
+    final rawDuration = command.data?['durationMs'];
+    final positionMs = active && rawPosition is int && rawPosition >= 0 ? rawPosition : 0;
+    final durationMs = active && rawDuration is int && rawDuration > 0 ? rawDuration : 0;
+    final clampedPosition = durationMs > 0 && positionMs > durationMs ? durationMs : positionMs;
+    if (_isPlayerActive == active &&
+        _isPlayerPlaying == playing &&
+        _remoteSkipMarker == skipMarker &&
+        _remoteMediaTitle == title &&
+        _remoteMediaSubtitle == subtitle &&
+        _remoteArtworkPath == artworkPath &&
+        _remoteArtworkServerId == artworkServerId &&
+        _remotePositionMs == clampedPosition &&
+        _remoteDurationMs == durationMs) {
+      return;
     }
+    _isPlayerActive = active;
+    _isPlayerPlaying = playing;
+    _remoteSkipMarker = skipMarker;
+    _remoteMediaTitle = title;
+    _remoteMediaSubtitle = subtitle;
+    _remoteArtworkPath = artworkPath;
+    _remoteArtworkServerId = artworkServerId;
+    _remotePositionMs = clampedPosition;
+    _remoteDurationMs = durationMs;
+    safeNotifyListeners();
   }
 
   void _cleanupSubscriptions() {
@@ -989,12 +1045,104 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _statusSubscription = null;
   }
 
-  /// Advertise whether this device's video player is up to the connected
-  /// remote, and remember it for a remote that connects later.
+  /// Send a full snapshot on connect and only changes during playback.
+  /// The marker is an optional protocol field; older clients ignore it.
+  Map<String, dynamic> get _hostPlaybackState => {
+    'playerActive': _hostPlayerActive,
+    'playerPlaying': _hostPlayerActive && _hostPlayerPlaying,
+    'positionMs': _hostPlayerActive ? _hostPositionMs : 0,
+    'durationMs': _hostPlayerActive ? _hostDurationMs : 0,
+    if (_hostPlayerActive && _hostMediaTitle != null) 'mediaTitle': _hostMediaTitle,
+    if (_hostPlayerActive && _hostMediaSubtitle != null) 'mediaSubtitle': _hostMediaSubtitle,
+    if (_hostPlayerActive && _hostArtworkPath != null) 'artworkPath': _hostArtworkPath,
+    if (_hostPlayerActive && _hostArtworkServerId != null) 'artworkServerId': _hostArtworkServerId,
+    if (_hostPlayerActive && _hostSkipMarker != null)
+      'skipMarker': _hostSkipMarker,
+  };
+
+  void _publishHostPlaybackState() {
+    if (!isHost || _peerService == null || !isConnected) return;
+    sendCommand(RemoteCommandType.syncState, data: _hostPlaybackState);
+  }
+
   void setHostPlayerActive(bool active) {
     _hostPlayerActive = active;
-    if (_peerService == null || !isConnected) return;
-    sendCommand(RemoteCommandType.syncState, data: {'playerActive': active});
+    if (!active) {
+      _hostPlayerPlaying = false;
+      _hostSkipMarker = null;
+      _hostMediaTitle = null;
+      _hostMediaSubtitle = null;
+      _hostArtworkPath = null;
+      _hostArtworkServerId = null;
+      _hostPositionMs = 0;
+      _hostDurationMs = 0;
+      _lastTimelinePublishedAt = null;
+      _lastPublishedPositionMs = 0;
+    }
+    _publishHostPlaybackState();
+  }
+
+  /// Playback metadata for the phone's in-app mini-player. The host is the
+  /// source of truth; no server credentials or artwork URLs cross the wire.
+  void setHostNowPlaying(String? title, {String? subtitle, String? artworkPath, String? artworkServerId}) {
+    final normalizedTitle = title?.trim();
+    final normalizedSubtitle = subtitle?.trim();
+    final safeTitle = normalizedTitle == null || normalizedTitle.isEmpty
+        ? null
+        : normalizedTitle.substring(0, normalizedTitle.length > 256 ? 256 : normalizedTitle.length);
+    final safeSubtitle = normalizedSubtitle == null || normalizedSubtitle.isEmpty
+        ? null
+        : normalizedSubtitle.substring(0, normalizedSubtitle.length > 256 ? 256 : normalizedSubtitle.length);
+    final normalizedArtwork = artworkPath?.trim();
+    final safeArtwork = normalizedArtwork == null || normalizedArtwork.isEmpty || normalizedArtwork.length > 2048
+        ? null
+        : normalizedArtwork;
+    final normalizedServer = artworkServerId?.trim();
+    final safeServer = normalizedServer == null || normalizedServer.isEmpty || normalizedServer.length > 256
+        ? null
+        : normalizedServer;
+    if (_hostMediaTitle == safeTitle && _hostMediaSubtitle == safeSubtitle &&
+        _hostArtworkPath == safeArtwork && _hostArtworkServerId == safeServer) return;
+    _hostMediaTitle = safeTitle;
+    _hostMediaSubtitle = safeSubtitle;
+    _hostArtworkPath = safeArtwork;
+    _hostArtworkServerId = safeServer;
+    _publishHostPlaybackState();
+  }
+
+  void setHostPlayerPlaying(bool playing) {
+    if (_hostPlayerPlaying == playing) return;
+    _hostPlayerPlaying = playing;
+    _publishHostPlaybackState();
+  }
+
+  void setHostSkipMarker(String? marker) {
+    if (marker != null && marker != 'intro' && marker != 'credits') return;
+    if (_hostSkipMarker == marker) return;
+    _hostSkipMarker = marker;
+    _publishHostPlaybackState();
+  }
+
+  /// Send the timeline at most every five seconds, or on a duration
+  /// change or a major seek. Android advances its own media clock between
+  /// updates without allowing the phone to seek the TV.
+  void setHostPlayerTimeline(Duration position, Duration duration) {
+    final positionMs = position.inMilliseconds < 0 ? 0 : position.inMilliseconds;
+    final durationMs = duration.inMilliseconds < 0 ? 0 : duration.inMilliseconds;
+    final now = DateTime.now();
+    final durationChanged = durationMs != _hostDurationMs;
+    final jumped = (positionMs - _lastPublishedPositionMs).abs() >= 12000;
+    _hostPositionMs = positionMs;
+    _hostDurationMs = durationMs;
+    if (!_hostPlayerActive || !isHost || !isConnected) return;
+    if (!durationChanged && !jumped &&
+        _lastTimelinePublishedAt != null &&
+        now.difference(_lastTimelinePublishedAt!) < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastTimelinePublishedAt = now;
+    _lastPublishedPositionMs = positionMs;
+    _publishHostPlaybackState();
   }
 
   void sendCommand(RemoteCommandType type, {Map<String, dynamic>? data}) {

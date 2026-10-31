@@ -1027,6 +1027,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     onCycleSubtitles: () => _cycleSubtitleTrack(),
     onCycleAudio: () => _cycleAudioTrack(),
     onHome: () => _handleHomeButton(),
+    onTransport: (command) => _remoteTransport(command, source: 'Companion remote'),
     readProvider: () => context.read<CompanionRemoteProvider>(),
   );
 
@@ -1484,6 +1485,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
 
     _companionRemote.bind();
+    _companionRemote.setNowPlaying(
+      _currentMetadata.displayTitle,
+      subtitle: _currentMetadata.displaySubtitle,
+      artworkPath: _currentMetadata.thumbPath,
+      artworkServerId: _currentMetadata.serverId,
+    );
     _setupAppleTvRemotePlaybackActions();
 
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
