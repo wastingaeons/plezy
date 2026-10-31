@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'dart:io' show Platform;
 
 import '../media/ids.dart';
@@ -17,6 +19,7 @@ import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import '../models/companion_remote/remote_command.dart';
+import '../models/companion_remote/remote_session.dart';
 import '../providers/companion_remote_provider.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
 import '../metadata_edit/metadata_edit_models.dart';
@@ -60,6 +63,7 @@ import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
+import '../widgets/companion_remote/mobile_remote_shortcut.dart';
 import '../widgets/deep_link_dialog.dart';
 import '../widgets/tag_edit_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
@@ -257,6 +261,24 @@ bool hasKnownNoPlayableMedia({
   MediaKind.show || MediaKind.season => leafCount == 0,
   _ => false,
 };
+
+/// The disconnected counterpart to "Play on Connected Device".
+/// Keep device selection on Android phones, for the same server-backed
+/// movies/episodes/shows/seasons that can be played on a paired host.
+/// A connecting/reconnecting session is already selecting a host; do not
+/// offer a second chooser in the middle of that transition.
+@visibleForTesting
+bool canOfferCastToDeviceOnMediaMenu({
+  required bool isAndroidPhone,
+  required bool isRemotePlayableMedia,
+  required RemoteSessionStatus? remoteStatus,
+  required bool isHosting,
+}) =>
+    isAndroidPhone &&
+    isRemotePlayableMedia &&
+    !isHosting &&
+    (remoteStatus == RemoteSessionStatus.disconnected ||
+        remoteStatus == RemoteSessionStatus.error);
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
@@ -778,11 +800,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final isVideoKind = mediaItem.isVideoContent;
     final isUnmatched = _isUnmatched(mediaItem);
     final remote = context.read<CompanionRemoteProvider?>();
-    final canPlayOnConnectedDevice =
-        (Platform.isAndroid || Platform.isIOS) &&
+    final isRemotePlayableMedia =
         _itemServerId != null &&
-        (remote?.isRemote ?? false) &&
-        (remote?.isConnected ?? false) &&
         !hasKnownNoPlayableMedia(
           kind: mediaKind,
           backend: mediaItem.backend,
@@ -793,6 +812,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             mediaKind == MediaKind.episode ||
             mediaKind == MediaKind.show ||
             mediaKind == MediaKind.season);
+    final canPlayOnConnectedDevice =
+        (Platform.isAndroid || Platform.isIOS) &&
+        isRemotePlayableMedia &&
+        (remote?.isRemote ?? false) &&
+        (remote?.isConnected ?? false);
+    final canCastToDevice = canOfferCastToDeviceOnMediaMenu(
+      isAndroidPhone: MobileCompanionRemoteShortcut.isSupported(context),
+      isRemotePlayableMedia: isRemotePlayableMedia,
+      remoteStatus: remote?.status,
+      isHosting: remote?.isHost ?? false,
+    );
 
     // Go to Series (for episodes and seasons) — hide if already on that series' detail screen
     final ancestorMeta = context
@@ -828,6 +858,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           value: 'play_on_connected_device',
           icon: Symbols.cast_rounded,
           label: 'Play on Connected Device',
+        )
+      else if (canCastToDevice)
+        _MenuAction(
+          value: 'cast_to_device',
+          icon: Symbols.cast_rounded,
+          label: 'Cast to device',
         ),
       if (!mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
         _MenuAction(
@@ -1224,6 +1260,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         outcome.didNavigate = true;
         if (context.mounted)
           await _handlePlayOnConnectedDevice(context, mediaItem);
+        break;
+      case 'cast_to_device':
+        // Open the same chooser as the toolbar Cast button. Pairing returns
+        // to browsing; starting this specific item remains an explicit action.
+        outcome.didNavigate = true;
+        if (context.mounted) openMobileCompanionRemote(context);
         break;
       case 'watch' || 'unwatch':
         await _handleSetWatched(
