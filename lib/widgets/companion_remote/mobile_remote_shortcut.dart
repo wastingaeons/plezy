@@ -78,6 +78,25 @@ class MobileRemoteShortcutRouteObserver extends NavigatorObserver {
   }
 }
 
+/// Open the same profile-scoped device picker/remote screen from either the
+/// toolbar cast icon or a media item's long-press menu. When disconnected,
+/// [MobileRemoteScreen] discovers hosts and returns to browsing on pairing.
+void openMobileCompanionRemote(
+  BuildContext context, {
+  CompanionRemotePlayRequest? playOnConnect,
+}) {
+  // The toolbar is above the nested navigator, and a card is inside it.
+  // Always target the same profile navigator so we keep the active session.
+  final navigator = ProfileNavigationScope.of(context).navigatorKey.currentState;
+  if (navigator == null) return;
+  navigator.push<void>(
+    MaterialPageRoute<void>(
+      settings: const RouteSettings(name: kMobileRemoteShortcutRouteName),
+      builder: (_) => MobileRemoteScreen(playOnConnect: playOnConnect),
+    ),
+  );
+}
+
 /// Android phone shortcut, with an unobtrusive connected-state indicator.
 /// Uses the existing MobileRemoteScreen pairing/return-to-browsing behavior.
 class MobileCompanionRemoteShortcut extends StatelessWidget {
@@ -86,19 +105,6 @@ class MobileCompanionRemoteShortcut extends StatelessWidget {
   static bool isSupported(BuildContext context) =>
       Theme.of(context).platform == TargetPlatform.android &&
       PlatformDetector.isMobile(context);
-
-  void _openRemote(BuildContext context) {
-    // This overlay sits above the profile Navigator; Navigator.of(context)
-    // would select the *root* navigator and lose the profile-scoped provider.
-    final navigator = ProfileNavigationScope.of(context).navigatorKey.currentState;
-    if (navigator == null) return;
-    navigator.push<void>(
-      MaterialPageRoute<void>(
-        settings: const RouteSettings(name: kMobileRemoteShortcutRouteName),
-        builder: (_) => const MobileRemoteScreen(),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +115,7 @@ class MobileCompanionRemoteShortcut extends StatelessWidget {
         elevation: 3,
         shape: const CircleBorder(),
         child: IconButton(
-          onPressed: () => _openRemote(context),
+          onPressed: () => openMobileCompanionRemote(context),
           tooltip: t.companionRemote.title,
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           icon: Stack(

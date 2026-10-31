@@ -21,8 +21,31 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/pill_input_decoration.dart';
 
+/// Pending title to launch on the TV once the phone has paired. No auth
+/// credentials cross the companion protocol; the host resolves the item
+/// using its own media-server connection.
+@immutable
+class CompanionRemotePlayRequest {
+  const CompanionRemotePlayRequest({
+    required this.serverId,
+    required this.ratingKey,
+  });
+
+  final String serverId;
+  final String ratingKey;
+
+  Map<String, dynamic> get commandData => {
+    'serverId': serverId,
+    'ratingKey': ratingKey,
+  };
+}
+
 class MobileRemoteScreen extends StatefulWidget {
-  const MobileRemoteScreen({super.key});
+  const MobileRemoteScreen({super.key, this.playOnConnect});
+
+  /// Omitted by the toolbar Cast button, so it keeps its original pairing-only
+  /// behavior. Present only for "Cast to device" from a media item.
+  final CompanionRemotePlayRequest? playOnConnect;
 
   @override
   State<MobileRemoteScreen> createState() => _MobileRemoteScreenState();
@@ -36,9 +59,11 @@ bool shouldReturnToBrowsingAfterRemoteConnect({
   required RemoteSessionStatus initialStatus,
   required bool isRemote,
   required bool isConnected,
+  bool hasPendingPlay = false,
 }) =>
-    initialStatus != RemoteSessionStatus.connected &&
-    initialStatus != RemoteSessionStatus.reconnecting &&
+    (hasPendingPlay ||
+        (initialStatus != RemoteSessionStatus.connected &&
+            initialStatus != RemoteSessionStatus.reconnecting)) &&
     isRemote &&
     isConnected;
 
@@ -54,6 +79,13 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
     _remoteProvider = context.read<CompanionRemoteProvider>();
     _initialRemoteStatus = _remoteProvider.status;
     _remoteProvider.addListener(_onRemoteSessionChanged);
+    // Pairing can finish between opening the menu and mounting this route.
+    // In that case, a pending title still needs to play on the connected TV.
+    if (widget.playOnConnect != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onRemoteSessionChanged();
+      });
+    }
   }
 
   void _onRemoteSessionChanged() {
@@ -64,6 +96,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
           initialStatus: _initialRemoteStatus,
           isRemote: _remoteProvider.isRemote,
           isConnected: _remoteProvider.isConnected,
+          hasPendingPlay: widget.playOnConnect != null,
         )) {
       return;
     }
@@ -79,13 +112,23 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
             initialStatus: _initialRemoteStatus,
             isRemote: _remoteProvider.isRemote,
             isConnected: _remoteProvider.isConnected,
+            hasPendingPlay: widget.playOnConnect != null,
           )) {
         return;
       }
       final route = ModalRoute.of(context);
       final navigator = Navigator.of(context);
       if (route?.isCurrent != true || !navigator.canPop()) return;
+      // Dispatch once, only after a live connected remote and a visible
+      // chooser have been confirmed. Cancel/back never starts playback.
       _returnedAfterPairing = true;
+      final request = widget.playOnConnect;
+      if (request != null) {
+        _remoteProvider.sendCommand(
+          RemoteCommandType.playMedia,
+          data: request.commandData,
+        );
+      }
       navigator.pop();
     });
   }
