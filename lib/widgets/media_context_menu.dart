@@ -1262,10 +1262,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _handlePlayOnConnectedDevice(context, mediaItem);
         break;
       case 'cast_to_device':
-        // Open the same chooser as the toolbar Cast button. Pairing returns
-        // to browsing; starting this specific item remains an explicit action.
+        // Carry the selected item through discovery; when pairing succeeds,
+        // the TV resolves it and playback begins automatically.
         outcome.didNavigate = true;
-        if (context.mounted) openMobileCompanionRemote(context);
+        if (context.mounted && _itemServerId != null) {
+          openMobileCompanionRemote(
+            context,
+            playOnConnect: CompanionRemotePlayRequest(
+              serverId: _itemServerId!,
+              ratingKey: mediaItem.id,
+            ),
+          );
+        }
         break;
       case 'watch' || 'unwatch':
         await _handleSetWatched(

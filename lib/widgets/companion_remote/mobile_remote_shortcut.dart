@@ -81,7 +81,10 @@ class MobileRemoteShortcutRouteObserver extends NavigatorObserver {
 /// Open the same profile-scoped device picker/remote screen from either the
 /// toolbar cast icon or a media item's long-press menu. When disconnected,
 /// [MobileRemoteScreen] discovers hosts and returns to browsing on pairing.
-void openMobileCompanionRemote(BuildContext context) {
+void openMobileCompanionRemote(
+  BuildContext context, {
+  CompanionRemotePlayRequest? playOnConnect,
+}) {
   // The toolbar is above the nested navigator, and a card is inside it.
   // Always target the same profile navigator so we keep the active session.
   final navigator = ProfileNavigationScope.of(context).navigatorKey.currentState;
@@ -89,7 +92,7 @@ void openMobileCompanionRemote(BuildContext context) {
   navigator.push<void>(
     MaterialPageRoute<void>(
       settings: const RouteSettings(name: kMobileRemoteShortcutRouteName),
-      builder: (_) => const MobileRemoteScreen(),
+      builder: (_) => MobileRemoteScreen(playOnConnect: playOnConnect),
     ),
   );
 }
