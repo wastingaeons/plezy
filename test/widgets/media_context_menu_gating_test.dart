@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/companion_remote/remote_session.dart';
-import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_version.dart';
