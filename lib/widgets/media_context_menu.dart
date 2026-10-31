@@ -64,6 +64,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/companion_remote/mobile_remote_shortcut.dart';
+import '../screens/companion_remote/mobile_remote_screen.dart';
 import '../widgets/deep_link_dialog.dart';
 import '../widgets/tag_edit_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
